@@ -72,9 +72,11 @@ spinning=true
 idleRunning=false
 
 
+/* запуск звука */
+
 spinSound.currentTime = 0
-spinSound.volume = 1
-spinSound.play()
+spinSound.play().catch(()=>{})
+
 
 itemsContainer.style.transition="transform 5s cubic-bezier(.17,.67,.24,1)"
 
@@ -129,7 +131,7 @@ document.getElementById("popupItem").innerText=prize
 document.getElementById("winPopup").style.display="flex"
 
 winSound.currentTime = 0
-winSound.play()
+winSound.play().catch(()=>{})
 
 }
 
