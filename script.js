@@ -72,12 +72,9 @@ spinning=true
 idleRunning=false
 
 
-/* запускаем звук */
-
 spinSound.currentTime = 0
 spinSound.volume = 1
 spinSound.play()
-
 
 itemsContainer.style.transition="transform 5s cubic-bezier(.17,.67,.24,1)"
 
@@ -88,15 +85,15 @@ currentOffset+=Math.random()*2000+2000
 itemsContainer.style.transform=`translateX(-${currentOffset}px)`
 
 
-/* затухание звука за последнюю секунду */
+/* быстрое затухание (0.5 сек) */
 
 setTimeout(()=>{
 
 let fadeInterval = setInterval(()=>{
 
-if(spinSound.volume > 0.05){
+if(spinSound.volume > 0.1){
 
-spinSound.volume -= 0.05
+spinSound.volume -= 0.1
 
 }else{
 
@@ -105,9 +102,9 @@ clearInterval(fadeInterval)
 
 }
 
-},50)
+},40)
 
-},4000)
+},4500)
 
 
 
@@ -154,8 +151,6 @@ function showWinPopup(prize){
 
 document.getElementById("popupItem").innerText=prize
 document.getElementById("winPopup").style.display="flex"
-
-/* звук выпадения подарка */
 
 winSound.currentTime = 0
 winSound.play()
