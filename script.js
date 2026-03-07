@@ -1,7 +1,20 @@
-const tg = window.Telegram.WebApp
-tg.expand()
+const tg = window.Telegram?.WebApp
+if (tg) tg.expand()
 
 const RECEIVER_WALLET = 'UQBwcw41wYAnPcQuHFtB9a_khXQLQR3LUCq5hMsyyQGuj37k'
+
+/*
+  ВАЖНО:
+  После включения GitHub Pages замени URL ниже на свой реальный адрес сайта.
+  Пример для вашего репо обычно выглядит так:
+  https://Pug97.github.io/angel-case-site/tonconnect-manifest.json
+*/
+const MANIFEST_URL = 'https://Pug97.github.io/angel-case-site/tonconnect-manifest.json'
+
+const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+  manifestUrl: MANIFEST_URL,
+  buttonRootId: 'tonConnectButton'
+})
 
 const casesPage = document.getElementById('casesPage')
 const profilePage = document.getElementById('profilePage')
@@ -16,14 +29,9 @@ const telegramName = document.getElementById('telegramName')
 const telegramId = document.getElementById('telegramId')
 const walletValue = document.getElementById('walletValue')
 
-const walletPopup = document.getElementById('walletPopup')
-const bindWalletBtn = document.getElementById('bindWalletBtn')
-const saveWalletBtn = document.getElementById('saveWalletBtn')
-const closeWalletPopupBtn = document.getElementById('closeWalletPopupBtn')
-const walletInput = document.getElementById('walletInput')
-
-const payBtn = document.getElementById('payBtn')
 const topupAmount = document.getElementById('topupAmount')
+const payTonBtn = document.getElementById('payTonBtn')
+const depositInfo = document.getElementById('depositInfo')
 
 const itemsContainer = document.getElementById('items')
 const spinSound = document.getElementById('spinSound')
@@ -40,7 +48,7 @@ let spinning = false
 let currentOffset = 0
 let idleFrame = null
 let spinFrame = null
-let currentCase = { name: 'Angel Case', price: 1 }
+let currentCase = { key: 'angel', name: 'Angel Case', price: 1 }
 
 const giftsByCase = {
   angel: [
@@ -68,21 +76,20 @@ const giftsByCase = {
 
 const appState = {
   balance: Number(localStorage.getItem('angelcase_balance') || '0'),
-  wallet: localStorage.getItem('angelcase_wallet') || '',
+  wallet: '',
   userId: '',
   userName: 'Гость'
 }
 
 function saveState() {
   localStorage.setItem('angelcase_balance', String(appState.balance))
-  localStorage.setItem('angelcase_wallet', appState.wallet)
 }
 
 function updateUI() {
   balanceValue.textContent = `${appState.balance.toFixed(2)} TON`
-  walletValue.textContent = appState.wallet || 'Не привязан'
   telegramName.textContent = appState.userName
   telegramId.textContent = appState.userId || '—'
+  walletValue.textContent = appState.wallet || 'Не подключён'
 }
 
 function initTelegramUser() {
@@ -126,54 +133,72 @@ function showPage(page) {
   }
 }
 
-function openWalletPopup() {
-  walletInput.value = appState.wallet
-  walletPopup.style.display = 'flex'
+function createComment() {
+  const ts = Date.now()
+  const user = appState.userId || 'guest'
+  return `ANGELCASE:${user}:${ts}`
 }
 
-function closeWalletPopup() {
-  walletPopup.style.display = 'none'
+function buildCommentPayload(text) {
+  const encoder = new TextEncoder()
+  const textBytes = encoder.encode(text)
+  const payload = new Uint8Array(4 + textBytes.length)
+
+  payload[0] = 0
+  payload[1] = 0
+  payload[2] = 0
+  payload[3] = 0
+  payload.set(textBytes, 4)
+
+  let binary = ''
+  payload.forEach(b => binary += String.fromCharCode(b))
+  return btoa(binary)
 }
 
-function saveWallet() {
-  const wallet = walletInput.value.trim()
-  if (!wallet) return
-
-  appState.wallet = wallet
-  saveState()
-  updateUI()
-  closeWalletPopup()
-}
-
-function topupBalanceDemo(amount) {
-  appState.balance += amount
-  saveState()
-  updateUI()
-}
-
-function handleTopup() {
+async function payTon() {
   const amount = Number(topupAmount.value)
-  if (!appState.wallet) {
-    alert('Сначала привяжи кошелёк')
+
+  if (!tonConnectUI.account?.address) {
+    alert('Сначала подключи TON-кошелёк')
     return
   }
 
   if (!amount || amount <= 0) {
-    alert('Введите сумму пополнения')
+    alert('Введите сумму')
     return
   }
 
-  const ok = confirm(
-    `Демо-пополнение на ${amount} TON\n\n` +
-    `Адрес получателя:\n${RECEIVER_WALLET}\n\n` +
-    `Сейчас это интерфейсный режим. Нажми OK, чтобы начислить баланс локально для теста.`
-  )
+  const comment = createComment()
+  const nano = String(Math.round(amount * 1_000_000_000))
 
-  if (!ok) return
+  const tx = {
+    validUntil: Math.floor(Date.now() / 1000) + 300,
+    messages: [
+      {
+        address: RECEIVER_WALLET,
+        amount: nano,
+        payload: buildCommentPayload(comment)
+      }
+    ]
+  }
 
-  topupBalanceDemo(amount)
-  topupAmount.value = ''
-  alert(`Баланс пополнен на ${amount} TON`)
+  try {
+    const result = await tonConnectUI.sendTransaction(tx)
+
+    depositInfo.textContent =
+      `Перевод отправлен.\n` +
+      `Сумма: ${amount} TON\n` +
+      `Кому: ${RECEIVER_WALLET}\n` +
+      `От кого: ${tonConnectUI.account.address}\n` +
+      `Комментарий: ${comment}\n\n` +
+      `Сейчас это только GitHub-этап.\n` +
+      `На следующем этапе мы подключим сервер,\n` +
+      `который будет проверять транзакцию и начислять баланс автоматически.`
+
+    topupAmount.value = ''
+  } catch (e) {
+    depositInfo.textContent = 'Платёж был отменён или кошелёк вернул ошибку.'
+  }
 }
 
 function createItem(gift) {
@@ -277,7 +302,7 @@ function startSpin() {
   if (spinning) return
 
   if (appState.balance < currentCase.price) {
-    alert('Недостаточно баланса')
+    alert('Недостаточно баланса.\n\nНа этапе GitHub баланс пока тестовый и хранится только в браузере.')
     return
   }
 
@@ -367,15 +392,29 @@ document.querySelectorAll('.case-open-btn').forEach(btn => {
 navCases.addEventListener('click', () => showPage('cases'))
 navProfile.addEventListener('click', () => showPage('profile'))
 backToCasesBtn.addEventListener('click', () => showPage('cases'))
-
-bindWalletBtn.addEventListener('click', openWalletPopup)
-saveWalletBtn.addEventListener('click', saveWallet)
-closeWalletPopupBtn.addEventListener('click', closeWalletPopup)
-
-payBtn.addEventListener('click', handleTopup)
+payTonBtn.addEventListener('click', payTon)
 openCaseBtn.addEventListener('click', startSpin)
 claimBtn.addEventListener('click', () => {
   winPopup.style.display = 'none'
+})
+
+tonConnectUI.onStatusChange(wallet => {
+  if (wallet?.account?.address) {
+    appState.wallet = wallet.account.address
+  } else {
+    appState.wallet = ''
+  }
+  updateUI()
+})
+
+/* Временная тестовая кнопка для локального баланса.
+   Можно удалить позже, когда будет backend */
+document.addEventListener('keydown', e => {
+  if (e.key === '+') {
+    appState.balance += 5
+    saveState()
+    updateUI()
+  }
 })
 
 updateUI()
