@@ -2,6 +2,7 @@ const tg = window.Telegram.WebApp
 tg.expand()
 
 const itemsContainer = document.getElementById("items")
+const spinSound = document.getElementById("spinSound")
 
 let idleRunning = true
 let spinning = false
@@ -32,6 +33,7 @@ const gift=randomGift()
 const div=document.createElement("div")
 
 div.className="item "+gift.class
+
 div.innerText=gift.name
 
 itemsContainer.appendChild(div)
@@ -51,6 +53,7 @@ if(!idleRunning) return
 currentOffset+=0.25
 
 itemsContainer.style.transition="none"
+
 itemsContainer.style.transform=`translateX(-${currentOffset}px)`
 
 requestAnimationFrame(idleAnimation)
@@ -66,9 +69,15 @@ document.getElementById("openCase").onclick=function(){
 if(spinning) return
 
 spinning=true
+
 idleRunning=false
 
-/* 5 секунд прокрутки */
+
+/* запускаем звук */
+
+spinSound.currentTime = 0
+spinSound.play()
+
 
 itemsContainer.style.transition="transform 5s cubic-bezier(.17,.67,.24,1)"
 
@@ -79,9 +88,13 @@ currentOffset+=Math.random()*2000+2000
 itemsContainer.style.transform=`translateX(-${currentOffset}px)`
 
 
-/* ожидание окончания прокрутки */
 
 setTimeout(()=>{
+
+/* останавливаем звук */
+
+spinSound.pause()
+
 
 const markerX=window.innerWidth/2
 
@@ -108,7 +121,9 @@ showWinPopup(winItem.innerText)
 }
 
 spinning=false
+
 idleRunning=true
+
 idleAnimation()
 
 },5000)
