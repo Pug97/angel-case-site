@@ -31,14 +31,14 @@ function createItem(gift) {
   return div
 }
 
-function fillItems(count = 120) {
+function fillItems(count = 140) {
   itemsContainer.innerHTML = ""
   for (let i = 0; i < count; i++) {
     itemsContainer.appendChild(createItem(randomGift()))
   }
 }
 
-function appendMoreItems(count = 80) {
+function appendMoreItems(count = 100) {
   for (let i = 0; i < count; i++) {
     itemsContainer.appendChild(createItem(randomGift()))
   }
@@ -52,10 +52,10 @@ function setOffset(value) {
 function idleAnimation() {
   if (!idleRunning) return
 
-  setOffset(currentOffset + 0.35)
+  setOffset(currentOffset + 0.45)
 
-  if (itemsContainer.children.length < 160) {
-    appendMoreItems(80)
+  if (itemsContainer.children.length < 180) {
+    appendMoreItems(100)
   }
 
   idleFrame = requestAnimationFrame(idleAnimation)
@@ -128,8 +128,8 @@ function startSpin() {
     spinFrame = null
   }
 
-  if (itemsContainer.children.length < 260) {
-    appendMoreItems(180)
+  if (itemsContainer.children.length < 300) {
+    appendMoreItems(220)
   }
 
   spinSound.pause()
@@ -142,9 +142,9 @@ function startSpin() {
 
   const startOffset = currentOffset
 
-  /* скорость рулетки напрямую зависит от длины звука */
-  const pixelsPerSecond = 650
-  const extraTravel = 700 + Math.random() * 250
+  /* БЫЛО медленно — теперь быстрее */
+  const pixelsPerSecond = 950
+  const extraTravel = 1100 + Math.random() * 350
   const totalTravel = (pixelsPerSecond * soundDuration) + extraTravel
 
   const startTime = performance.now()
@@ -157,11 +157,10 @@ function startSpin() {
     const newOffset = startOffset + totalTravel * eased
     setOffset(newOffset)
 
-    if (itemsContainer.children.length < 200) {
-      appendMoreItems(100)
+    if (itemsContainer.children.length < 220) {
+      appendMoreItems(120)
     }
 
-    /* звук закончился — даём ещё 1 секунду плавной остановки */
     if (elapsed >= soundDuration && !spinSound.paused) {
       spinSound.pause()
     }
