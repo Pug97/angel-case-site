@@ -1,68 +1,169 @@
 body{
 
-background:#0f0f0f;
-color:white;
+margin:0;
+background:linear-gradient(180deg,#0f0f12,#1b1b22);
+
 font-family:Arial;
+color:white;
+
 text-align:center;
+
+}
+
+.container{
+
+padding-top:60px;
+
+}
+
+.logo{
+
+font-size:36px;
+color:#f6e6b4;
+
+text-shadow:0 0 15px rgba(255,220,120,0.6);
 
 }
 
 .roulette{
 
 width:90%;
-height:120px;
+max-width:800px;
 
-border:3px solid #8b5cf6;
+height:140px;
 
 margin:40px auto;
+
+border-radius:12px;
+
+border:2px solid rgba(255,215,140,0.4);
+
+background:#141419;
 
 overflow:hidden;
 
 position:relative;
+
+box-shadow:0 0 30px rgba(255,220,150,0.1);
+
+}
+
+.marker{
+
+position:absolute;
+
+left:50%;
+top:0;
+
+width:4px;
+height:100%;
+
+background:#ffd27a;
+
+transform:translateX(-50%);
+
+box-shadow:0 0 15px #ffd27a;
+
+z-index:10;
 
 }
 
 #items{
 
 display:flex;
+
 transition:transform 4s cubic-bezier(.17,.67,.24,1);
 
 }
 
 .item{
 
-min-width:120px;
-height:120px;
+min-width:130px;
+height:130px;
+
+margin:5px;
+
+border-radius:10px;
 
 display:flex;
 align-items:center;
 justify-content:center;
 
-font-size:18px;
+font-weight:bold;
 
-border-right:1px solid #333;
+font-size:15px;
+
+}
+
+.common{
+
+background:#3a3a3f;
+
+}
+
+.rare{
+
+background:#3a6df0;
+
+box-shadow:0 0 10px rgba(70,120,255,0.6);
+
+}
+
+.epic{
+
+background:#8c4bff;
+
+box-shadow:0 0 10px rgba(170,90,255,0.7);
+
+}
+
+.legendary{
+
+background:#f3c969;
+color:#000;
+
+box-shadow:0 0 20px rgba(255,215,120,0.9);
 
 }
 
 button{
 
-background:#8b5cf6;
-color:white;
+margin-top:30px;
+
+background:linear-gradient(90deg,#ffd27a,#fff2c2);
 
 border:none;
-padding:15px 30px;
+
+color:#000;
+
+font-weight:bold;
 
 font-size:18px;
+
+padding:15px 35px;
 
 border-radius:10px;
 
 cursor:pointer;
 
+box-shadow:0 0 20px rgba(255,215,120,0.4);
+
+}
+
+button:hover{
+
+transform:scale(1.05);
+
 }
 
 #result{
 
-margin-top:20px;
-font-size:22px;
+margin-top:30px;
+
+font-size:24px;
+
+color:#ffd27a;
+
+text-shadow:0 0 10px rgba(255,220,120,0.6);
 
 }
