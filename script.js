@@ -33,7 +33,6 @@ const gift = randomGift()
 const div = document.createElement("div")
 
 div.className="item "+gift.class
-
 div.innerText = gift.name
 
 itemsContainer.appendChild(div)
@@ -44,12 +43,12 @@ itemsContainer.appendChild(div)
 
 generateItems()
 
-// медленное движение рулетки
+// idle движение
 function idleAnimation(){
 
 if(!idleRunning) return
 
-idleOffset += 0.3
+idleOffset += 0.25
 
 itemsContainer.style.transform = `translateX(-${idleOffset}px)`
 
@@ -60,30 +59,48 @@ requestAnimationFrame(idleAnimation)
 idleAnimation()
 
 
+
+// кнопка открытия
 document.getElementById("openCase").onclick=function(){
 
-// останавливаем idle анимацию
 idleRunning = false
 
 itemsContainer.style.transition = "transform 4s cubic-bezier(.17,.67,.24,1)"
 
 generateItems()
 
-const winIndex = Math.floor(Math.random()*20)+20
+const randomOffset = Math.random()*2000 + 1500
 
-const itemWidth = 140
+itemsContainer.style.transform=`translateX(-${randomOffset}px)`
 
-const offset = (winIndex * itemWidth) - (window.innerWidth / 2) + (itemWidth / 2)
 
-itemsContainer.style.transform=`translateX(-${offset}px)`
-
+// после остановки определяем предмет под стрелкой
 setTimeout(()=>{
 
-const winItem = itemsContainer.children[winIndex].innerText
+const markerX = window.innerWidth / 2
 
-document.getElementById("result").innerText="You won: "+winItem
+const items = document.querySelectorAll(".item")
 
-// после спина снова запускаем idle
+let winItem = null
+
+items.forEach(item=>{
+
+const rect = item.getBoundingClientRect()
+
+if(rect.left < markerX && rect.right > markerX){
+
+winItem = item
+
+}
+
+})
+
+if(winItem){
+
+document.getElementById("result").innerText = "You won: " + winItem.innerText
+
+}
+
 idleRunning = true
 idleAnimation()
 
