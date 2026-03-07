@@ -97,7 +97,7 @@ winItem = item
 
 if(winItem){
 
-document.getElementById("result").innerText = "You won: " + winItem.innerText
+showWinPopup(winItem.innerText)
 
 }
 
