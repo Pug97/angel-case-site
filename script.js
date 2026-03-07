@@ -107,3 +107,17 @@ idleAnimation()
 },4000)
 
 }
+
+function showWinPopup(prize){
+
+document.getElementById("popupItem").innerText = prize
+
+document.getElementById("winPopup").style.display = "flex"
+
+}
+
+document.getElementById("claimBtn").onclick=function(){
+
+document.getElementById("winPopup").style.display = "none"
+
+}
