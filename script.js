@@ -2,160 +2,164 @@ const tg = window.Telegram.WebApp
 tg.expand()
 
 const itemsContainer = document.getElementById("items")
-
 const spinSound = document.getElementById("spinSound")
 const winSound = document.getElementById("winSound")
 
 let idleRunning = true
 let spinning = false
 let currentOffset = 0
-let animationFrame
+let idleFrame = null
+let spinFrame = null
+
+const ITEM_FULL_WIDTH = 140
 
 const gifts = [
-
-{name:"Small Gift", class:"common"},
-{name:"Angel Feather", class:"common"},
-{name:"Golden Wing", class:"rare"},
-{name:"Heaven Box", class:"rare"},
-{name:"Divine Halo", class:"epic"},
-{name:"Sacred Relic", class:"epic"},
-{name:"Angel Crown", class:"legendary"}
-
+  {name:"Small Gift", class:"common"},
+  {name:"Angel Feather", class:"common"},
+  {name:"Golden Wing", class:"rare"},
+  {name:"Heaven Box", class:"rare"},
+  {name:"Divine Halo", class:"epic"},
+  {name:"Sacred Relic", class:"epic"},
+  {name:"Angel Crown", class:"legendary"}
 ]
 
 function randomGift(){
-return gifts[Math.floor(Math.random()*gifts.length)]
+  return gifts[Math.floor(Math.random() * gifts.length)]
 }
 
-function generateItems(){
-
-for(let i=0;i<40;i++){
-
-const gift=randomGift()
-
-const div=document.createElement("div")
-
-div.className="item "+gift.class
-div.innerText=gift.name
-
-itemsContainer.appendChild(div)
-
+function createItem(gift){
+  const div = document.createElement("div")
+  div.className = "item " + gift.class
+  div.innerText = gift.name
+  return div
 }
 
+function fillItems(count = 120){
+  itemsContainer.innerHTML = ""
+  for(let i = 0; i < count; i++){
+    itemsContainer.appendChild(createItem(randomGift()))
+  }
 }
 
-generateItems()
+function appendMoreItems(count = 80){
+  for(let i = 0; i < count; i++){
+    itemsContainer.appendChild(createItem(randomGift()))
+  }
+}
 
+fillItems()
 
+function setOffset(value){
+  currentOffset = value
+  itemsContainer.style.transform = `translate3d(-${currentOffset}px,0,0)`
+}
 
 function idleAnimation(){
+  if(!idleRunning) return
 
-if(!idleRunning) return
+  setOffset(currentOffset + 0.35)
 
-currentOffset += 0.3
+  if(itemsContainer.children.length < 160){
+    appendMoreItems(80)
+  }
 
-itemsContainer.style.transform=`translateX(-${currentOffset}px)`
-
-requestAnimationFrame(idleAnimation)
-
+  idleFrame = requestAnimationFrame(idleAnimation)
 }
 
 idleAnimation()
-
-
 
 document.getElementById("openCase").addEventListener("click", function(){
 
-if(spinning) return
+  if(spinning) return
 
-spinning = true
-idleRunning = false
+  spinning = true
+  idleRunning = false
 
-spinSound.currentTime = 0
-spinSound.play()
+  if(idleFrame){
+    cancelAnimationFrame(idleFrame)
+    idleFrame = null
+  }
 
-let startTime = performance.now()
+  spinSound.currentTime = 0
+  spinSound.play().catch(() => {})
 
-function spinAnimation(time){
+  if(itemsContainer.children.length < 220){
+    appendMoreItems(140)
+  }
 
-let elapsed = (time - startTime) / 1000
+  const soundDuration = (!isNaN(spinSound.duration) && spinSound.duration > 0) ? spinSound.duration : 5
+  const extraTime = 1
+  const totalDuration = soundDuration + extraTime
 
-/* скорость зависит от звука */
+  const startOffset = currentOffset
 
-let progress = elapsed / spinSound.duration
+  const minTravel = 2200
+  const maxTravel = 3200
+  const totalTravel = minTravel + Math.random() * (maxTravel - minTravel)
 
-currentOffset += 25 * (1 - progress)
+  const startTime = performance.now()
 
-itemsContainer.style.transform=`translateX(-${currentOffset}px)`
+  function easeOutCubic(t){
+    return 1 - Math.pow(1 - t, 3)
+  }
 
-if(elapsed < spinSound.duration){
+  function animateSpin(now){
+    const elapsed = (now - startTime) / 1000
+    const progress = Math.min(elapsed / totalDuration, 1)
+    const eased = easeOutCubic(progress)
 
-animationFrame = requestAnimationFrame(spinAnimation)
+    const newOffset = startOffset + totalTravel * eased
+    setOffset(newOffset)
 
-}else{
+    if(itemsContainer.children.length < 180){
+      appendMoreItems(100)
+    }
 
-finishSpin()
+    if(progress < 1){
+      spinFrame = requestAnimationFrame(animateSpin)
+    }else{
+      finishSpin()
+    }
+  }
 
-}
-
-}
-
-requestAnimationFrame(spinAnimation)
-
+  spinFrame = requestAnimationFrame(animateSpin)
 })
-
-
 
 function finishSpin(){
 
-spinSound.pause()
+  spinSound.pause()
 
-const markerX = window.innerWidth/2
+  const marker = document.querySelector(".marker")
+  const markerRect = marker.getBoundingClientRect()
+  const markerX = markerRect.left + markerRect.width / 2
 
-const items = document.querySelectorAll(".item")
+  const items = document.querySelectorAll(".item")
+  let winItem = null
 
-let winItem=null
+  items.forEach(item => {
+    const rect = item.getBoundingClientRect()
+    if(rect.left <= markerX && rect.right >= markerX){
+      winItem = item
+    }
+  })
 
-items.forEach(item=>{
+  if(winItem){
+    showWinPopup(winItem.innerText)
+  }
 
-const rect=item.getBoundingClientRect()
-
-if(rect.left < markerX && rect.right > markerX){
-
-winItem=item
-
+  spinning = false
+  idleRunning = true
+  idleAnimation()
 }
-
-})
-
-if(winItem){
-
-showWinPopup(winItem.innerText)
-
-}
-
-spinning=false
-idleRunning=true
-idleAnimation()
-
-}
-
-
 
 function showWinPopup(prize){
+  document.getElementById("popupItem").innerText = prize
+  document.getElementById("winPopup").style.display = "flex"
 
-document.getElementById("popupItem").innerText=prize
-document.getElementById("winPopup").style.display="flex"
-
-winSound.currentTime=0
-winSound.play()
-
+  winSound.currentTime = 0
+  winSound.play().catch(() => {})
 }
 
-
-
-document.getElementById("claimBtn").onclick=function(){
-
-document.getElementById("winPopup").style.display="none"
-
+document.getElementById("claimBtn").onclick = function(){
+  document.getElementById("winPopup").style.display = "none"
 }
