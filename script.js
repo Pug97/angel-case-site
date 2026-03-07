@@ -3,15 +3,12 @@ tg.expand()
 
 const itemsContainer = document.getElementById("items")
 const spinSound = document.getElementById("spinSound")
-const winSound = document.getElementById("winSound")
 
 let idleRunning = true
 let spinning = false
 let currentOffset = 0
 let idleFrame = null
 let spinFrame = null
-
-const ITEM_FULL_WIDTH = 140
 
 const gifts = [
   { name: "Small Gift", class: "common" },
@@ -136,7 +133,6 @@ function startSpin() {
   const soundDuration = Math.max(totalDuration - 1, 0.1)
 
   const startOffset = currentOffset
-
   const baseSpeed = 520
   const totalTravel =
     (baseSpeed * soundDuration) +
@@ -170,9 +166,6 @@ function startSpin() {
 function showWinPopup(prize) {
   document.getElementById("popupItem").innerText = prize
   document.getElementById("winPopup").style.display = "flex"
-
-  winSound.currentTime = 0
-  winSound.play().catch(() => {})
 }
 
 document.getElementById("claimBtn").onclick = function () {
