@@ -3,6 +3,9 @@ tg.expand()
 
 const itemsContainer = document.getElementById("items")
 
+let idleOffset = 0
+let idleRunning = true
+
 const gifts = [
 
 {name:"Small Gift", class:"common"},
@@ -23,7 +26,7 @@ function generateItems(){
 
 itemsContainer.innerHTML=""
 
-for(let i=0;i<60;i++){
+for(let i=0;i<80;i++){
 
 const gift = randomGift()
 
@@ -41,17 +44,35 @@ itemsContainer.appendChild(div)
 
 generateItems()
 
+// медленное движение рулетки
+function idleAnimation(){
+
+if(!idleRunning) return
+
+idleOffset += 0.3
+
+itemsContainer.style.transform = `translateX(-${idleOffset}px)`
+
+requestAnimationFrame(idleAnimation)
+
+}
+
+idleAnimation()
+
+
 document.getElementById("openCase").onclick=function(){
+
+// останавливаем idle анимацию
+idleRunning = false
+
+itemsContainer.style.transition = "transform 4s cubic-bezier(.17,.67,.24,1)"
 
 generateItems()
 
-// выбираем индекс предмета который будет под стрелкой
 const winIndex = Math.floor(Math.random()*20)+20
 
-// ширина одного предмета
 const itemWidth = 140
 
-// рассчитываем позицию прокрутки
 const offset = (winIndex * itemWidth) - (window.innerWidth / 2) + (itemWidth / 2)
 
 itemsContainer.style.transform=`translateX(-${offset}px)`
@@ -61,6 +82,10 @@ setTimeout(()=>{
 const winItem = itemsContainer.children[winIndex].innerText
 
 document.getElementById("result").innerText="You won: "+winItem
+
+// после спина снова запускаем idle
+idleRunning = true
+idleAnimation()
 
 },4000)
 
