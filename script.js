@@ -3,7 +3,6 @@ tg.expand()
 
 const itemsContainer = document.getElementById("items")
 
-let idleOffset = 0
 let idleRunning = true
 let spinning = false
 let currentOffset = 0
@@ -28,12 +27,13 @@ function generateItems(){
 
 for(let i=0;i<40;i++){
 
-const gift = randomGift()
+const gift=randomGift()
 
-const div = document.createElement("div")
+const div=document.createElement("div")
 
-div.className = "item " + gift.class
-div.innerText = gift.name
+div.className="item "+gift.class
+
+div.innerText=gift.name
 
 itemsContainer.appendChild(div)
 
@@ -49,9 +49,10 @@ function idleAnimation(){
 
 if(!idleRunning) return
 
-currentOffset += 0.25
+currentOffset+=0.25
 
 itemsContainer.style.transition="none"
+
 itemsContainer.style.transform=`translateX(-${currentOffset}px)`
 
 requestAnimationFrame(idleAnimation)
@@ -72,18 +73,16 @@ idleRunning=false
 
 itemsContainer.style.transition="transform 4s cubic-bezier(.17,.67,.24,1)"
 
-// добавляем новые предметы вперед
 generateItems()
 
-// рулетка всегда движется дальше вправо
-currentOffset += Math.random()*1500 + 1500
+currentOffset+=Math.random()*1500+1500
 
 itemsContainer.style.transform=`translateX(-${currentOffset}px)`
 
 
 setTimeout(()=>{
 
-const markerX = window.innerWidth/2
+const markerX=window.innerWidth/2
 
 const items=document.querySelectorAll(".item")
 
