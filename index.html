@@ -2,57 +2,38 @@
 <html>
 
 <head>
-
-<meta charset="UTF-8">
-<title>Angel Case</title>
-
-<link rel="stylesheet" href="style.css">
-
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-
+  <meta charset="UTF-8">
+  <title>Angel Case</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
 <body>
 
-<div class="container">
+  <div class="container">
+    <h1 class="logo">👼 Angel Case</h1>
 
-<h1 class="logo">👼 Angel Case</h1>
+    <div class="roulette">
+      <div class="marker"></div>
+      <div id="items"></div>
+    </div>
 
-<div class="roulette">
+    <button id="openCase">Open Case</button>
+  </div>
 
-<div class="marker"></div>
+  <div id="winPopup" class="popup">
+    <div class="popup-content">
+      <h2>You won</h2>
+      <div id="popupItem"></div>
+      <button id="claimBtn">Claim reward</button>
+    </div>
+  </div>
 
-<div id="items"></div>
+  <audio id="spinSound" preload="auto">
+    <source src="z_uk-ruletki.mp3" type="audio/mpeg">
+  </audio>
 
-</div>
-
-<button id="openCase">Open Case</button>
-
-</div>
-
-<div id="winPopup" class="popup">
-
-<div class="popup-content">
-
-<h2>You won</h2>
-
-<div id="popupItem"></div>
-
-<button id="claimBtn">Claim reward</button>
-
-</div>
-
-</div>
-
-<audio id="spinSound" preload="auto">
-<source src="z_uk-ruletki.mp3" type="audio/mpeg">
-</audio>
-
-<audio id="winSound" preload="auto">
-<source src="win.wav" type="audio/wav">
-</audio>
-
-<script src="script.js"></script>
+  <script src="script.js"></script>
 
 </body>
 </html>
