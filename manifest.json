@@ -1,0 +1,8 @@
+{
+"name":"AngelCase",
+"short_name":"AngelCase",
+"start_url":"/",
+"display":"standalone",
+"background_color":"#0f0f0f",
+"theme_color":"#8b5cf6"
+}
