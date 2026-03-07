@@ -3,12 +3,14 @@ tg.expand()
 
 const itemsContainer = document.getElementById("items")
 const spinSound = document.getElementById("spinSound")
+const tickSound = document.getElementById("tickSound")
 
 let idleRunning = true
 let spinning = false
 let currentOffset = 0
 let idleFrame = null
 let spinFrame = null
+let lastTickedItem = null
 
 const gifts = [
   { name: "Small Gift", class: "common" },
@@ -19,6 +21,32 @@ const gifts = [
   { name: "Sacred Relic", class: "epic" },
   { name: "Angel Crown", class: "legendary" }
 ]
+
+const tickPool = []
+let tickPoolIndex = 0
+
+function setupTickPool() {
+  const src = tickSound?.querySelector("source")?.getAttribute("src") || "tick.mp3"
+
+  for (let i = 0; i < 8; i++) {
+    const audio = new Audio(src)
+    audio.preload = "auto"
+    tickPool.push(audio)
+  }
+}
+
+function playTick() {
+  if (!tickPool.length) return
+
+  const audio = tickPool[tickPoolIndex]
+  audio.currentTime = 0
+  audio.play().catch(() => {})
+
+  tickPoolIndex++
+  if (tickPoolIndex >= tickPool.length) {
+    tickPoolIndex = 0
+  }
+}
 
 function randomGift() {
   return gifts[Math.floor(Math.random() * gifts.length)]
@@ -47,6 +75,37 @@ function appendMoreItems(count = 100) {
 function setOffset(value) {
   currentOffset = value
   itemsContainer.style.transform = `translate3d(-${currentOffset}px, 0, 0)`
+}
+
+function getMarkerX() {
+  const marker = document.querySelector(".marker")
+  const markerRect = marker.getBoundingClientRect()
+  return markerRect.left + markerRect.width / 2
+}
+
+function getCenteredItem() {
+  const markerX = getMarkerX()
+  const items = document.querySelectorAll(".item")
+
+  for (const item of items) {
+    const rect = item.getBoundingClientRect()
+    if (rect.left <= markerX && rect.right >= markerX) {
+      return item
+    }
+  }
+
+  return null
+}
+
+function handleTickSync() {
+  if (!spinning) return
+
+  const currentItem = getCenteredItem()
+
+  if (currentItem && currentItem !== lastTickedItem) {
+    lastTickedItem = currentItem
+    playTick()
+  }
 }
 
 function idleAnimation() {
@@ -80,21 +139,7 @@ function easeOutCubic(t) {
 }
 
 function findWinningItem() {
-  const marker = document.querySelector(".marker")
-  const markerRect = marker.getBoundingClientRect()
-  const markerX = markerRect.left + markerRect.width / 2
-
-  const items = document.querySelectorAll(".item")
-  let winItem = null
-
-  items.forEach(item => {
-    const rect = item.getBoundingClientRect()
-    if (rect.left <= markerX && rect.right >= markerX) {
-      winItem = item
-    }
-  })
-
-  return winItem
+  return getCenteredItem()
 }
 
 function finishSpin() {
@@ -109,6 +154,7 @@ function finishSpin() {
 
   spinning = false
   idleRunning = true
+  lastTickedItem = null
   idleAnimation()
 }
 
@@ -117,6 +163,7 @@ function startSpin() {
 
   spinning = true
   idleRunning = false
+  lastTickedItem = null
 
   if (idleFrame) {
     cancelAnimationFrame(idleFrame)
@@ -141,8 +188,6 @@ function startSpin() {
   const totalDuration = timing.totalDuration
 
   const startOffset = currentOffset
-
-  /* БЫЛО медленно — теперь быстрее */
   const pixelsPerSecond = 950
   const extraTravel = 1100 + Math.random() * 350
   const totalTravel = (pixelsPerSecond * soundDuration) + extraTravel
@@ -156,6 +201,8 @@ function startSpin() {
 
     const newOffset = startOffset + totalTravel * eased
     setOffset(newOffset)
+
+    handleTickSync()
 
     if (itemsContainer.children.length < 220) {
       appendMoreItems(120)
@@ -186,6 +233,7 @@ document.getElementById("claimBtn").onclick = function () {
 
 document.getElementById("openCase").addEventListener("click", startSpin)
 
+setupTickPool()
 fillItems()
 
 if (spinSound.readyState >= 1) {
