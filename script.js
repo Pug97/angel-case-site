@@ -1,3 +1,5 @@
+let spinning = false
+
 const tg = window.Telegram.WebApp
 tg.expand()
 
