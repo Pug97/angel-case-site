@@ -9,6 +9,7 @@ const winSound = document.getElementById("winSound")
 let idleRunning = true
 let spinning = false
 let currentOffset = 0
+let animationFrame
 
 const gifts = [
 
@@ -51,9 +52,8 @@ function idleAnimation(){
 
 if(!idleRunning) return
 
-currentOffset+=0.25
+currentOffset += 0.3
 
-itemsContainer.style.transition="none"
 itemsContainer.style.transform=`translateX(-${currentOffset}px)`
 
 requestAnimationFrame(idleAnimation)
@@ -68,31 +68,51 @@ document.getElementById("openCase").addEventListener("click", function(){
 
 if(spinning) return
 
-spinning=true
-idleRunning=false
+spinning = true
+idleRunning = false
 
 spinSound.currentTime = 0
 spinSound.play()
 
-/* получаем длину звука */
+let startTime = performance.now()
 
-let spinDuration = (spinSound.duration || 5) + 1
+function spinAnimation(time){
 
-itemsContainer.style.transition=`transform ${spinDuration}s cubic-bezier(.17,.67,.24,1)`
+let elapsed = (time - startTime) / 1000
 
-generateItems()
+/* скорость зависит от звука */
 
-currentOffset+=Math.random()*2000+2000
+let progress = elapsed / spinSound.duration
+
+currentOffset += 25 * (1 - progress)
 
 itemsContainer.style.transform=`translateX(-${currentOffset}px)`
 
-setTimeout(()=>{
+if(elapsed < spinSound.duration){
+
+animationFrame = requestAnimationFrame(spinAnimation)
+
+}else{
+
+finishSpin()
+
+}
+
+}
+
+requestAnimationFrame(spinAnimation)
+
+})
+
+
+
+function finishSpin(){
 
 spinSound.pause()
 
-const markerX=window.innerWidth/2
+const markerX = window.innerWidth/2
 
-const items=document.querySelectorAll(".item")
+const items = document.querySelectorAll(".item")
 
 let winItem=null
 
@@ -118,9 +138,7 @@ spinning=false
 idleRunning=true
 idleAnimation()
 
-},spinDuration*1000)
-
-})
+}
 
 
 
@@ -129,7 +147,7 @@ function showWinPopup(prize){
 document.getElementById("popupItem").innerText=prize
 document.getElementById("winPopup").style.display="flex"
 
-winSound.currentTime = 0
+winSound.currentTime=0
 winSound.play()
 
 }
