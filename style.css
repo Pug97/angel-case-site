@@ -2,11 +2,45 @@ body{
 
 background:#0f0f0f;
 color:white;
-
 font-family:Arial;
 text-align:center;
 
-padding-top:80px;
+}
+
+.roulette{
+
+width:90%;
+height:120px;
+
+border:3px solid #8b5cf6;
+
+margin:40px auto;
+
+overflow:hidden;
+
+position:relative;
+
+}
+
+#items{
+
+display:flex;
+transition:transform 4s cubic-bezier(.17,.67,.24,1);
+
+}
+
+.item{
+
+min-width:120px;
+height:120px;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+font-size:18px;
+
+border-right:1px solid #333;
 
 }
 
@@ -19,6 +53,7 @@ border:none;
 padding:15px 30px;
 
 font-size:18px;
+
 border-radius:10px;
 
 cursor:pointer;
@@ -27,7 +62,7 @@ cursor:pointer;
 
 #result{
 
-margin-top:40px;
+margin-top:20px;
 font-size:22px;
 
 }
