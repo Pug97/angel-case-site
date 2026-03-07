@@ -2,7 +2,9 @@ const tg = window.Telegram.WebApp
 tg.expand()
 
 const itemsContainer = document.getElementById("items")
+
 const spinSound = document.getElementById("spinSound")
+const winSound = document.getElementById("winSound")
 
 let idleRunning = true
 let spinning = false
@@ -33,7 +35,6 @@ const gift=randomGift()
 const div=document.createElement("div")
 
 div.className="item "+gift.class
-
 div.innerText=gift.name
 
 itemsContainer.appendChild(div)
@@ -53,7 +54,6 @@ if(!idleRunning) return
 currentOffset+=0.25
 
 itemsContainer.style.transition="none"
-
 itemsContainer.style.transform=`translateX(-${currentOffset}px)`
 
 requestAnimationFrame(idleAnimation)
@@ -69,13 +69,13 @@ document.getElementById("openCase").onclick=function(){
 if(spinning) return
 
 spinning=true
-
 idleRunning=false
 
 
 /* запускаем звук */
 
 spinSound.currentTime = 0
+spinSound.volume = 1
 spinSound.play()
 
 
@@ -88,13 +88,33 @@ currentOffset+=Math.random()*2000+2000
 itemsContainer.style.transform=`translateX(-${currentOffset}px)`
 
 
+/* затухание звука за последнюю секунду */
 
 setTimeout(()=>{
 
-/* останавливаем звук */
+let fadeInterval = setInterval(()=>{
+
+if(spinSound.volume > 0.05){
+
+spinSound.volume -= 0.05
+
+}else{
+
+spinSound.volume = 0
+clearInterval(fadeInterval)
+
+}
+
+},50)
+
+},4000)
+
+
+
+setTimeout(()=>{
 
 spinSound.pause()
-
+spinSound.volume = 1
 
 const markerX=window.innerWidth/2
 
@@ -121,9 +141,7 @@ showWinPopup(winItem.innerText)
 }
 
 spinning=false
-
 idleRunning=true
-
 idleAnimation()
 
 },5000)
@@ -135,8 +153,12 @@ idleAnimation()
 function showWinPopup(prize){
 
 document.getElementById("popupItem").innerText=prize
-
 document.getElementById("winPopup").style.display="flex"
+
+/* звук выпадения подарка */
+
+winSound.currentTime = 0
+winSound.play()
 
 }
 
