@@ -168,6 +168,8 @@ text-shadow:0 0 10px rgba(255,220,120,0.6);
 
 }
 
+
+
 .popup{
 
 position:fixed;
@@ -211,21 +213,5 @@ font-size:24px;
 margin:20px 0;
 
 color:#ffd27a;
-
-}
-
-.popup button{
-
-background:linear-gradient(90deg,#ffd27a,#fff2c2);
-
-border:none;
-
-padding:15px 30px;
-
-font-size:18px;
-
-border-radius:10px;
-
-cursor:pointer;
 
 }
