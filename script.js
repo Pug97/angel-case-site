@@ -85,33 +85,9 @@ currentOffset+=Math.random()*2000+2000
 itemsContainer.style.transform=`translateX(-${currentOffset}px)`
 
 
-/* быстрое затухание (0.5 сек) */
-
-setTimeout(()=>{
-
-let fadeInterval = setInterval(()=>{
-
-if(spinSound.volume > 0.1){
-
-spinSound.volume -= 0.1
-
-}else{
-
-spinSound.volume = 0
-clearInterval(fadeInterval)
-
-}
-
-},40)
-
-},4500)
-
-
-
 setTimeout(()=>{
 
 spinSound.pause()
-spinSound.volume = 1
 
 const markerX=window.innerWidth/2
 
