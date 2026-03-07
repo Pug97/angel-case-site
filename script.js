@@ -16,9 +16,7 @@ const gifts = [
 ]
 
 function randomGift(){
-
 return gifts[Math.floor(Math.random()*gifts.length)]
-
 }
 
 function generateItems(){
@@ -33,7 +31,7 @@ const div = document.createElement("div")
 
 div.className="item "+gift.class
 
-div.innerText=gift.name
+div.innerText = gift.name
 
 itemsContainer.appendChild(div)
 
@@ -47,15 +45,20 @@ document.getElementById("openCase").onclick=function(){
 
 generateItems()
 
-const winIndex = Math.floor(Math.random()*40)+10
+// выбираем индекс предмета который будет под стрелкой
+const winIndex = Math.floor(Math.random()*20)+20
 
-const offset = winIndex * 140
+// ширина одного предмета
+const itemWidth = 140
+
+// рассчитываем позицию прокрутки
+const offset = (winIndex * itemWidth) - (window.innerWidth / 2) + (itemWidth / 2)
 
 itemsContainer.style.transform=`translateX(-${offset}px)`
 
-const winItem = itemsContainer.children[winIndex].innerText
-
 setTimeout(()=>{
+
+const winItem = itemsContainer.children[winIndex].innerText
 
 document.getElementById("result").innerText="You won: "+winItem
 
