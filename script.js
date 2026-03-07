@@ -45,6 +45,8 @@ itemsContainer.appendChild(div)
 
 generateItems()
 
+
+
 function idleAnimation(){
 
 if(!idleRunning) return
@@ -60,6 +62,8 @@ requestAnimationFrame(idleAnimation)
 
 idleAnimation()
 
+
+
 document.getElementById("openCase").addEventListener("click", function(){
 
 if(spinning) return
@@ -68,10 +72,13 @@ spinning=true
 idleRunning=false
 
 spinSound.currentTime = 0
-spinSound.volume = 1
 spinSound.play()
 
-itemsContainer.style.transition="transform 5s cubic-bezier(.17,.67,.24,1)"
+/* получаем длину звука */
+
+let spinDuration = (spinSound.duration || 5) + 1
+
+itemsContainer.style.transition=`transform ${spinDuration}s cubic-bezier(.17,.67,.24,1)`
 
 generateItems()
 
@@ -111,9 +118,11 @@ spinning=false
 idleRunning=true
 idleAnimation()
 
-},5000)
+},spinDuration*1000)
 
 })
+
+
 
 function showWinPopup(prize){
 
@@ -124,6 +133,8 @@ winSound.currentTime = 0
 winSound.play()
 
 }
+
+
 
 document.getElementById("claimBtn").onclick=function(){
 
