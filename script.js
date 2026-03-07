@@ -1,86 +1,58 @@
-// подключаем Telegram Mini App
 const tg = window.Telegram.WebApp
-
-// разворачиваем приложение
 tg.expand()
 
-// показываем цвет Telegram темы
-document.body.style.backgroundColor = tg.themeParams.bg_color || "#0f0f0f"
+const itemsContainer = document.getElementById("items")
 
-
-// получаем данные пользователя
-const user = tg.initDataUnsafe?.user
-
-if(user){
-
-console.log("User ID:", user.id)
-console.log("User name:", user.first_name)
-
-}
-
-
-// список подарков (можно менять)
 const gifts = [
 
-{
-name: "Common Gift 🎁",
-chance: 50
-},
-
-{
-name: "Rare Gift 💎",
-chance: 30
-},
-
-{
-name: "Epic NFT Gift 🔥",
-chance: 15
-},
-
-{
-name: "Legendary NFT 👑",
-chance: 5
-}
+"Common 🎁",
+"Common 🎁",
+"Common 🎁",
+"Rare 💎",
+"Rare 💎",
+"Epic 🔥",
+"Legendary 👑"
 
 ]
 
+function generateItems(){
 
+itemsContainer.innerHTML=""
 
-// функция рулетки
-function spinCase(){
+for(let i=0;i<50;i++){
 
-const random = Math.random() * 100
+const gift = gifts[Math.floor(Math.random()*gifts.length)]
 
-let cumulative = 0
+const div = document.createElement("div")
 
-for(let gift of gifts){
+div.className="item"
 
-cumulative += gift.chance
+div.innerText=gift
 
-if(random <= cumulative){
-
-showResult(gift.name)
-
-break
+itemsContainer.appendChild(div)
 
 }
 
 }
 
+generateItems()
+
+document.getElementById("openCase").onclick = function(){
+
+generateItems()
+
+const winIndex = Math.floor(Math.random()*40)+5
+
+const offset = winIndex * 120
+
+itemsContainer.style.transform = `translateX(-${offset}px)`
+
+const winItem = itemsContainer.children[winIndex].innerText
+
+setTimeout(()=>{
+
+document.getElementById("result").innerText = "You won: " + winItem
+
+},4000)
+
 }
-
-
-
-// показать результат
-function showResult(prize){
-
-const resultDiv = document.getElementById("result")
-
-resultDiv.innerText = "You won: " + prize
-
-}
-
-
-
-// кнопка открытия кейса
-document.getElementById("openCase").addEventListener("click", spinCase)
