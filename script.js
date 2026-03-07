@@ -6,6 +6,7 @@ const itemsContainer = document.getElementById("items")
 let idleOffset = 0
 let idleRunning = true
 let spinning = false
+let currentOffset = 0
 
 const gifts = [
 
@@ -25,16 +26,13 @@ return gifts[Math.floor(Math.random()*gifts.length)]
 
 function generateItems(){
 
-itemsContainer.innerHTML=""
-
-for(let i=0;i<80;i++){
+for(let i=0;i<40;i++){
 
 const gift = randomGift()
 
 const div = document.createElement("div")
 
-div.className="item "+gift.class
-
+div.className = "item " + gift.class
 div.innerText = gift.name
 
 itemsContainer.appendChild(div)
@@ -51,11 +49,10 @@ function idleAnimation(){
 
 if(!idleRunning) return
 
-idleOffset += 0.25
+currentOffset += 0.25
 
 itemsContainer.style.transition="none"
-
-itemsContainer.style.transform=`translateX(-${idleOffset}px)`
+itemsContainer.style.transform=`translateX(-${currentOffset}px)`
 
 requestAnimationFrame(idleAnimation)
 
@@ -75,11 +72,13 @@ idleRunning=false
 
 itemsContainer.style.transition="transform 4s cubic-bezier(.17,.67,.24,1)"
 
+// добавляем новые предметы вперед
 generateItems()
 
-const randomOffset = Math.random()*2000 + 1500
+// рулетка всегда движется дальше вправо
+currentOffset += Math.random()*1500 + 1500
 
-itemsContainer.style.transform=`translateX(-${randomOffset}px)`
+itemsContainer.style.transform=`translateX(-${currentOffset}px)`
 
 
 setTimeout(()=>{
