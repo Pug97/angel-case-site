@@ -1,31 +1,145 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 
 <head>
   <meta charset="UTF-8">
-  <title>Angel Case</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AngelCase</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 
 <body>
+  <div class="app">
 
-  <div class="container">
-    <h1 class="logo">👼 Angel Case</h1>
+    <header class="topbar">
+      <div>
+        <div class="brand">👼 AngelCase</div>
+        <div class="subtitle" id="pageSubtitle">Кейсы</div>
+      </div>
 
-    <div class="roulette">
-      <div class="marker"></div>
-      <div id="items"></div>
-    </div>
+      <div class="balance-box">
+        <span class="balance-label">Баланс</span>
+        <span class="balance-value" id="balanceValue">0.00 TON</span>
+      </div>
+    </header>
 
-    <button id="openCase">Open Case</button>
+    <main class="content">
+
+      <!-- PAGE: CASES -->
+      <section id="casesPage" class="page active">
+        <div class="hero-card">
+          <div class="hero-title">Небесные кейсы</div>
+          <div class="hero-text">
+            Открывай кейсы, получай подарки и пополняй баланс через кошелёк.
+          </div>
+        </div>
+
+        <div class="cases-grid">
+          <div class="case-card">
+            <div class="case-glow"></div>
+            <div class="case-name">Angel Case</div>
+            <div class="case-price">Цена: 1 TON</div>
+            <button class="case-open-btn" data-case="angel" data-price="1">Открыть</button>
+          </div>
+
+          <div class="case-card">
+            <div class="case-glow rare-glow"></div>
+            <div class="case-name">Heaven Case</div>
+            <div class="case-price">Цена: 3 TON</div>
+            <button class="case-open-btn" data-case="heaven" data-price="3">Открыть</button>
+          </div>
+
+          <div class="case-card">
+            <div class="case-glow epic-glow"></div>
+            <div class="case-name">Divine Case</div>
+            <div class="case-price">Цена: 5 TON</div>
+            <button class="case-open-btn" data-case="divine" data-price="5">Открыть</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE: PROFILE -->
+      <section id="profilePage" class="page">
+        <div class="profile-card">
+          <div class="profile-title">Профиль</div>
+
+          <div class="profile-row">
+            <span>Telegram</span>
+            <span id="telegramName">Гость</span>
+          </div>
+
+          <div class="profile-row">
+            <span>ID</span>
+            <span id="telegramId">—</span>
+          </div>
+
+          <div class="profile-row">
+            <span>Кошелёк</span>
+            <span id="walletValue">Не привязан</span>
+          </div>
+
+          <button id="bindWalletBtn" class="primary-btn">Привязать кошелёк</button>
+        </div>
+
+        <div class="topup-card">
+          <div class="profile-title">Пополнение</div>
+
+          <label class="field-label">Сумма в TON</label>
+          <input id="topupAmount" class="field-input" type="number" min="0.1" step="0.1" placeholder="Например, 2">
+
+          <div class="topup-wallet-box">
+            <div class="small-label">Адрес получателя</div>
+            <div class="wallet-address">
+              UQBwcw41wYAnPcQuHFtB9a_khXQLQR3LUCq5hMsyyQGuj37k
+            </div>
+          </div>
+
+          <button id="payBtn" class="primary-btn">Пополнить</button>
+          <div class="hint-text">
+            Сейчас это UI-версия. Для реального автозачисления нужен backend с проверкой транзакции.
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE: ROULETTE -->
+      <section id="roulettePage" class="page">
+        <div class="roulette-header">
+          <button id="backToCasesBtn" class="back-btn">← Назад</button>
+          <div class="roulette-case-name" id="rouletteCaseName">Angel Case</div>
+        </div>
+
+        <div class="roulette">
+          <div class="marker"></div>
+          <div id="items"></div>
+        </div>
+
+        <button id="openCase" class="primary-btn big-btn">Открыть кейс</button>
+      </section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button id="navCases" class="nav-btn active">Кейсы</button>
+      <button id="navProfile" class="nav-btn">Профиль</button>
+    </nav>
   </div>
 
+  <!-- POPUP WIN -->
   <div id="winPopup" class="popup">
     <div class="popup-content">
       <h2>You won</h2>
       <div id="popupItem"></div>
-      <button id="claimBtn">Claim reward</button>
+      <button id="claimBtn" class="primary-btn">Забрать выигрыш</button>
+    </div>
+  </div>
+
+  <!-- POPUP BIND WALLET -->
+  <div id="walletPopup" class="popup">
+    <div class="popup-content">
+      <h2>Привязка кошелька</h2>
+      <input id="walletInput" class="field-input" type="text" placeholder="Вставь адрес кошелька TON">
+      <button id="saveWalletBtn" class="primary-btn">Сохранить</button>
+      <button id="closeWalletPopupBtn" class="secondary-btn">Закрыть</button>
     </div>
   </div>
 
@@ -34,6 +148,5 @@
   </audio>
 
   <script src="script.js"></script>
-
 </body>
 </html>
