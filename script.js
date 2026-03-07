@@ -14,121 +14,68 @@ let spinFrame = null
 const ITEM_FULL_WIDTH = 140
 
 const gifts = [
-  {name:"Small Gift", class:"common"},
-  {name:"Angel Feather", class:"common"},
-  {name:"Golden Wing", class:"rare"},
-  {name:"Heaven Box", class:"rare"},
-  {name:"Divine Halo", class:"epic"},
-  {name:"Sacred Relic", class:"epic"},
-  {name:"Angel Crown", class:"legendary"}
+  { name: "Small Gift", class: "common" },
+  { name: "Angel Feather", class: "common" },
+  { name: "Golden Wing", class: "rare" },
+  { name: "Heaven Box", class: "rare" },
+  { name: "Divine Halo", class: "epic" },
+  { name: "Sacred Relic", class: "epic" },
+  { name: "Angel Crown", class: "legendary" }
 ]
 
-function randomGift(){
+function randomGift() {
   return gifts[Math.floor(Math.random() * gifts.length)]
 }
 
-function createItem(gift){
+function createItem(gift) {
   const div = document.createElement("div")
   div.className = "item " + gift.class
   div.innerText = gift.name
   return div
 }
 
-function fillItems(count = 120){
+function fillItems(count = 120) {
   itemsContainer.innerHTML = ""
-  for(let i = 0; i < count; i++){
+  for (let i = 0; i < count; i++) {
     itemsContainer.appendChild(createItem(randomGift()))
   }
 }
 
-function appendMoreItems(count = 80){
-  for(let i = 0; i < count; i++){
+function appendMoreItems(count = 80) {
+  for (let i = 0; i < count; i++) {
     itemsContainer.appendChild(createItem(randomGift()))
   }
 }
 
-fillItems()
-
-function setOffset(value){
+function setOffset(value) {
   currentOffset = value
-  itemsContainer.style.transform = `translate3d(-${currentOffset}px,0,0)`
+  itemsContainer.style.transform = `translate3d(-${currentOffset}px, 0, 0)`
 }
 
-function idleAnimation(){
-  if(!idleRunning) return
+function idleAnimation() {
+  if (!idleRunning) return
 
   setOffset(currentOffset + 0.35)
 
-  if(itemsContainer.children.length < 160){
+  if (itemsContainer.children.length < 160) {
     appendMoreItems(80)
   }
 
   idleFrame = requestAnimationFrame(idleAnimation)
 }
 
-idleAnimation()
-
-document.getElementById("openCase").addEventListener("click", function(){
-
-  if(spinning) return
-
-  spinning = true
-  idleRunning = false
-
-  if(idleFrame){
-    cancelAnimationFrame(idleFrame)
-    idleFrame = null
+function getSpinDuration() {
+  if (!isNaN(spinSound.duration) && spinSound.duration > 0) {
+    return spinSound.duration + 1
   }
+  return 6
+}
 
-  spinSound.currentTime = 0
-  spinSound.play().catch(() => {})
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3)
+}
 
-  if(itemsContainer.children.length < 220){
-    appendMoreItems(140)
-  }
-
-  const soundDuration = (!isNaN(spinSound.duration) && spinSound.duration > 0) ? spinSound.duration : 5
-  const extraTime = 1
-  const totalDuration = soundDuration + extraTime
-
-  const startOffset = currentOffset
-
-  const minTravel = 2200
-  const maxTravel = 3200
-  const totalTravel = minTravel + Math.random() * (maxTravel - minTravel)
-
-  const startTime = performance.now()
-
-  function easeOutCubic(t){
-    return 1 - Math.pow(1 - t, 3)
-  }
-
-  function animateSpin(now){
-    const elapsed = (now - startTime) / 1000
-    const progress = Math.min(elapsed / totalDuration, 1)
-    const eased = easeOutCubic(progress)
-
-    const newOffset = startOffset + totalTravel * eased
-    setOffset(newOffset)
-
-    if(itemsContainer.children.length < 180){
-      appendMoreItems(100)
-    }
-
-    if(progress < 1){
-      spinFrame = requestAnimationFrame(animateSpin)
-    }else{
-      finishSpin()
-    }
-  }
-
-  spinFrame = requestAnimationFrame(animateSpin)
-})
-
-function finishSpin(){
-
-  spinSound.pause()
-
+function findWinningItem() {
   const marker = document.querySelector(".marker")
   const markerRect = marker.getBoundingClientRect()
   const markerX = markerRect.left + markerRect.width / 2
@@ -138,12 +85,21 @@ function finishSpin(){
 
   items.forEach(item => {
     const rect = item.getBoundingClientRect()
-    if(rect.left <= markerX && rect.right >= markerX){
+    if (rect.left <= markerX && rect.right >= markerX) {
       winItem = item
     }
   })
 
-  if(winItem){
+  return winItem
+}
+
+function finishSpin() {
+  spinSound.pause()
+  spinSound.currentTime = 0
+
+  const winItem = findWinningItem()
+
+  if (winItem) {
     showWinPopup(winItem.innerText)
   }
 
@@ -152,7 +108,66 @@ function finishSpin(){
   idleAnimation()
 }
 
-function showWinPopup(prize){
+function startSpin() {
+  if (spinning) return
+
+  spinning = true
+  idleRunning = false
+
+  if (idleFrame) {
+    cancelAnimationFrame(idleFrame)
+    idleFrame = null
+  }
+
+  if (spinFrame) {
+    cancelAnimationFrame(spinFrame)
+    spinFrame = null
+  }
+
+  if (itemsContainer.children.length < 240) {
+    appendMoreItems(160)
+  }
+
+  spinSound.pause()
+  spinSound.currentTime = 0
+  spinSound.play().catch(() => {})
+
+  const totalDuration = getSpinDuration()
+  const soundDuration = Math.max(totalDuration - 1, 0.1)
+
+  const startOffset = currentOffset
+
+  const baseSpeed = 520
+  const totalTravel =
+    (baseSpeed * soundDuration) +
+    900 +
+    Math.random() * 500
+
+  const startTime = performance.now()
+
+  function animateSpin(now) {
+    const elapsed = (now - startTime) / 1000
+    const progress = Math.min(elapsed / totalDuration, 1)
+    const eased = easeOutCubic(progress)
+
+    const newOffset = startOffset + totalTravel * eased
+    setOffset(newOffset)
+
+    if (itemsContainer.children.length < 180) {
+      appendMoreItems(100)
+    }
+
+    if (progress < 1) {
+      spinFrame = requestAnimationFrame(animateSpin)
+    } else {
+      finishSpin()
+    }
+  }
+
+  spinFrame = requestAnimationFrame(animateSpin)
+}
+
+function showWinPopup(prize) {
   document.getElementById("popupItem").innerText = prize
   document.getElementById("winPopup").style.display = "flex"
 
@@ -160,6 +175,26 @@ function showWinPopup(prize){
   winSound.play().catch(() => {})
 }
 
-document.getElementById("claimBtn").onclick = function(){
+document.getElementById("claimBtn").onclick = function () {
   document.getElementById("winPopup").style.display = "none"
+}
+
+document.getElementById("openCase").addEventListener("click", startSpin)
+
+fillItems()
+
+if (spinSound.readyState >= 1) {
+  idleAnimation()
+} else {
+  spinSound.addEventListener("loadedmetadata", () => {
+    if (!idleFrame && !spinning) {
+      idleAnimation()
+    }
+  }, { once: true })
+
+  setTimeout(() => {
+    if (!idleFrame && !spinning) {
+      idleAnimation()
+    }
+  }, 500)
 }
