@@ -2,10 +2,8 @@ body{
 
 margin:0;
 background:linear-gradient(180deg,#0f0f12,#1b1b22);
-
 font-family:Arial;
 color:white;
-
 text-align:center;
 
 }
@@ -20,7 +18,6 @@ padding-top:60px;
 
 font-size:36px;
 color:#f6e6b4;
-
 text-shadow:0 0 15px rgba(255,220,120,0.6);
 
 }
@@ -29,7 +26,6 @@ text-shadow:0 0 15px rgba(255,220,120,0.6);
 
 width:90%;
 max-width:800px;
-
 height:140px;
 
 margin:40px auto;
@@ -71,8 +67,6 @@ z-index:10;
 #items{
 
 display:flex;
-
-transition:transform 4s cubic-bezier(.17,.67,.24,1);
 
 }
 
@@ -156,30 +150,21 @@ transform:scale(1.05);
 
 }
 
-#result{
-
-margin-top:30px;
-
-font-size:24px;
-
-color:#ffd27a;
-
-text-shadow:0 0 10px rgba(255,220,120,0.6);
-
-}
 
 
+/* окно выигрыша */
 
 .popup{
 
 position:fixed;
+
 top:0;
 left:0;
 
 width:100%;
 height:100%;
 
-background:rgba(0,0,0,0.8);
+background:rgba(0,0,0,0.85);
 
 display:none;
 
@@ -202,16 +187,48 @@ text-align:center;
 
 border:2px solid #ffd27a;
 
-box-shadow:0 0 25px rgba(255,215,120,0.5);
+box-shadow:0 0 40px rgba(255,215,120,0.7);
+
+animation:winAppear 0.6s ease;
 
 }
 
 #popupItem{
 
-font-size:24px;
+font-size:28px;
 
 margin:20px 0;
 
 color:#ffd27a;
+
+text-shadow:0 0 20px rgba(255,220,120,0.9);
+
+}
+
+
+
+/* анимация появления */
+
+@keyframes winAppear{
+
+0%{
+
+transform:scale(0.4);
+opacity:0;
+
+}
+
+60%{
+
+transform:scale(1.1);
+
+}
+
+100%{
+
+transform:scale(1);
+opacity:1;
+
+}
 
 }
