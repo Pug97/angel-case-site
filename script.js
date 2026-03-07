@@ -63,9 +63,16 @@ function idleAnimation() {
 
 function getSpinDuration() {
   if (!isNaN(spinSound.duration) && spinSound.duration > 0) {
-    return spinSound.duration + 1
+    return {
+      soundDuration: spinSound.duration,
+      totalDuration: spinSound.duration + 1
+    }
   }
-  return 6
+
+  return {
+    soundDuration: 5,
+    totalDuration: 6
+  }
 }
 
 function easeOutCubic(t) {
@@ -121,23 +128,24 @@ function startSpin() {
     spinFrame = null
   }
 
-  if (itemsContainer.children.length < 240) {
-    appendMoreItems(160)
+  if (itemsContainer.children.length < 260) {
+    appendMoreItems(180)
   }
 
   spinSound.pause()
   spinSound.currentTime = 0
   spinSound.play().catch(() => {})
 
-  const totalDuration = getSpinDuration()
-  const soundDuration = Math.max(totalDuration - 1, 0.1)
+  const timing = getSpinDuration()
+  const soundDuration = timing.soundDuration
+  const totalDuration = timing.totalDuration
 
   const startOffset = currentOffset
-  const baseSpeed = 520
-  const totalTravel =
-    (baseSpeed * soundDuration) +
-    900 +
-    Math.random() * 500
+
+  /* скорость рулетки напрямую зависит от длины звука */
+  const pixelsPerSecond = 650
+  const extraTravel = 700 + Math.random() * 250
+  const totalTravel = (pixelsPerSecond * soundDuration) + extraTravel
 
   const startTime = performance.now()
 
@@ -149,8 +157,13 @@ function startSpin() {
     const newOffset = startOffset + totalTravel * eased
     setOffset(newOffset)
 
-    if (itemsContainer.children.length < 180) {
+    if (itemsContainer.children.length < 200) {
       appendMoreItems(100)
+    }
+
+    /* звук закончился — даём ещё 1 секунду плавной остановки */
+    if (elapsed >= soundDuration && !spinSound.paused) {
+      spinSound.pause()
     }
 
     if (progress < 1) {
