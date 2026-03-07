@@ -4,11 +4,12 @@
 <head>
 
 <meta charset="UTF-8">
-<title>AngelCase</title>
 
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<title>Angel Case</title>
 
 <link rel="stylesheet" href="style.css">
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 </head>
 
@@ -16,7 +17,7 @@
 
 <div class="container">
 
-<h1 class="logo">👼 AngelCase</h1>
+<h1 class="logo">Angel Case</h1>
 
 <div class="roulette">
 
@@ -26,20 +27,18 @@
 
 </div>
 
-<button id="openCase">Open Angel Case</button>
-
-<div id="result"></div>
+<button id="openCase">Open Case</button>
 
 </div>
 
 
-<!-- ОКНО ВЫИГРЫША -->
+<!-- окно выигрыша -->
 
 <div id="winPopup" class="popup">
 
 <div class="popup-content">
 
-<h2>You won!</h2>
+<h2>You won</h2>
 
 <div id="popupItem"></div>
 
@@ -50,8 +49,12 @@
 </div>
 
 
+<!-- звук рулетки -->
+
+<audio id="spinSound" src="spin.mp3" preload="auto"></audio>
+
+
 <script src="script.js"></script>
 
 </body>
-
 </html>
