@@ -33,8 +33,7 @@ const gift = randomGift()
 
 const div = document.createElement("div")
 
-div.className="item "+gift.class
-
+div.className = "item " + gift.class
 div.innerText = gift.name
 
 itemsContainer.appendChild(div)
@@ -46,13 +45,14 @@ itemsContainer.appendChild(div)
 generateItems()
 
 
-// idle анимация рулетки
+// idle движение рулетки
 function idleAnimation(){
 
 if(!idleRunning) return
 
 idleOffset += 0.25
 
+itemsContainer.style.transition = "none"
 itemsContainer.style.transform = `translateX(-${idleOffset}px)`
 
 requestAnimationFrame(idleAnimation)
@@ -62,9 +62,8 @@ requestAnimationFrame(idleAnimation)
 idleAnimation()
 
 
-
 // кнопка открытия кейса
-document.getElementById("openCase").onclick=function(){
+document.getElementById("openCase").onclick = function(){
 
 if(spinning) return
 
@@ -78,7 +77,7 @@ generateItems()
 
 const randomOffset = Math.random()*2000 + 1500
 
-itemsContainer.style.transform=`translateX(-${randomOffset}px)`
+itemsContainer.style.transform = `translateX(-${randomOffset}px)`
 
 
 // после остановки рулетки
@@ -119,7 +118,7 @@ idleAnimation()
 
 
 
-// popup окно выигрыша
+// popup окно
 function showWinPopup(prize){
 
 document.getElementById("popupItem").innerText = prize
@@ -131,7 +130,7 @@ document.getElementById("winPopup").style.display = "flex"
 
 
 // кнопка забрать
-document.getElementById("claimBtn").onclick=function(){
+document.getElementById("claimBtn").onclick = function(){
 
 document.getElementById("winPopup").style.display = "none"
 
