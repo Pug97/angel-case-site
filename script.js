@@ -11,10 +11,12 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
 });
 
 const casesPage = document.getElementById('casesPage');
+const inventoryPage = document.getElementById('inventoryPage');
 const profilePage = document.getElementById('profilePage');
 const roulettePage = document.getElementById('roulettePage');
 
 const navCases = document.getElementById('navCases');
+const navInventory = document.getElementById('navInventory');
 const navProfile = document.getElementById('navProfile');
 const pageSubtitle = document.getElementById('pageSubtitle');
 
@@ -111,9 +113,7 @@ function expandBalanceTemporarily() {
   isBalanceExpanded = true;
   renderBalance();
 
-  if (balanceRevealTimer) {
-    clearTimeout(balanceRevealTimer);
-  }
+  if (balanceRevealTimer) clearTimeout(balanceRevealTimer);
 
   balanceRevealTimer = setTimeout(() => {
     isBalanceExpanded = false;
@@ -229,10 +229,12 @@ async function fetchInventory() {
 
 function showPage(page) {
   if (casesPage) casesPage.classList.remove('active');
+  if (inventoryPage) inventoryPage.classList.remove('active');
   if (profilePage) profilePage.classList.remove('active');
   if (roulettePage) roulettePage.classList.remove('active');
 
   if (navCases) navCases.classList.remove('active');
+  if (navInventory) navInventory.classList.remove('active');
   if (navProfile) navProfile.classList.remove('active');
 
   if (page === 'cases') {
@@ -241,11 +243,17 @@ function showPage(page) {
     setText(pageSubtitle, 'Кейсы');
   }
 
+  if (page === 'inventory') {
+    if (inventoryPage) inventoryPage.classList.add('active');
+    if (navInventory) navInventory.classList.add('active');
+    setText(pageSubtitle, 'Инвентарь');
+    fetchInventory();
+  }
+
   if (page === 'profile') {
     if (profilePage) profilePage.classList.add('active');
     if (navProfile) navProfile.classList.add('active');
     setText(pageSubtitle, 'Профиль');
-    fetchInventory();
   }
 
   if (page === 'roulette') {
@@ -637,6 +645,7 @@ function bindEvents() {
   });
 
   if (navCases) navCases.addEventListener('click', () => showPage('cases'));
+  if (navInventory) navInventory.addEventListener('click', () => showPage('inventory'));
   if (navProfile) navProfile.addEventListener('click', () => showPage('profile'));
   if (backToCasesBtn) backToCasesBtn.addEventListener('click', () => showPage('cases'));
   if (payTonBtn) payTonBtn.addEventListener('click', payTon);
