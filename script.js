@@ -526,6 +526,7 @@ async function startRealSpin() {
     const timing = getRouletteTiming();
     const soundDuration = timing.soundDuration;
     const totalDuration = timing.totalDuration;
+    const slowPhaseDuration = 1;
 
     if (spinSound) {
       spinSound.pause();
@@ -547,8 +548,8 @@ async function startRealSpin() {
 
       const finalOffset = Math.max(targetOffset, 0);
 
-      const soundPhaseDistance = finalOffset * 0.9;
-      const finalPhaseDistance = finalOffset - soundPhaseDistance;
+      const fastDistance = finalOffset * 0.94;
+      const slowDistance = finalOffset - fastDistance;
 
       const startTime = performance.now();
 
@@ -561,19 +562,15 @@ async function startRealSpin() {
         let newOffset = 0;
 
         if (elapsed <= soundDuration) {
-          const soundProgress = Math.min(elapsed / soundDuration, 1);
-          const syncedProgress = 1 - Math.pow(1 - soundProgress, 1.35);
-          newOffset = soundPhaseDistance * syncedProgress;
-
-          if (spinSound && spinSound.paused && elapsed < soundDuration) {
-            spinSound.play().catch(() => {});
-          }
+          const p = Math.min(elapsed / soundDuration, 1);
+          const fastProgress = 1 - Math.pow(1 - p, 1.9);
+          newOffset = fastDistance * fastProgress;
         } else {
-          const extraElapsed = elapsed - soundDuration;
-          const extraProgress = Math.min(extraElapsed / 1, 1);
-          const slowedProgress = easeOutCubic(extraProgress);
+          const extra = elapsed - soundDuration;
+          const p = Math.min(extra / slowPhaseDuration, 1);
+          const slowProgress = easeOutCubic(p);
 
-          newOffset = soundPhaseDistance + finalPhaseDistance * slowedProgress;
+          newOffset = fastDistance + slowDistance * slowProgress;
 
           if (spinSound && !spinSound.paused) {
             spinSound.pause();
