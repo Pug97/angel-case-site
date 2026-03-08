@@ -74,6 +74,7 @@ body{
 
 .section-card,
 .case-detail-hero,
+.roulette-hero,
 .popup-content{
   background:rgba(255,255,255,.04);
   border:1px solid rgba(255,255,255,.08);
@@ -160,7 +161,8 @@ body{
   font-weight:700;
 }
 
-.case-detail-hero{
+.case-detail-hero,
+.roulette-hero{
   padding:24px 18px;
   text-align:center;
   margin-bottom:18px;
@@ -241,6 +243,55 @@ body{
   color:#9fd3ff;
   font-size:13px;
   font-weight:700;
+}
+
+.roulette-wrap{
+  position:relative;
+  width:100%;
+  height:150px;
+  overflow:hidden;
+  border-radius:22px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 8px 28px rgba(0,0,0,.18);
+  margin-bottom:18px;
+}
+
+.marker{
+  position:absolute;
+  top:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:4px;
+  height:100%;
+  background:#ffd675;
+  box-shadow:0 0 16px rgba(255,214,117,.65);
+  z-index:4;
+}
+
+.roulette-items{
+  display:flex;
+  align-items:center;
+  height:100%;
+  will-change:transform;
+  transform:translate3d(0,0,0);
+}
+
+.item{
+  flex:0 0 130px;
+  width:130px;
+  height:130px;
+  margin:10px 6px;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:10px;
+  font-size:14px;
+  font-weight:700;
+  user-select:none;
+  color:#fff;
 }
 
 .profile-row{
@@ -551,5 +602,11 @@ body{
 
   .case-item-image{
     font-size:46px;
+  }
+
+  .item{
+    flex:0 0 120px;
+    width:120px;
+    height:120px;
   }
 }
