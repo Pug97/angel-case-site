@@ -43,11 +43,31 @@
           <div class="case-detail-image" id="caseDetailImage">🎁</div>
           <div class="case-detail-title" id="caseDetailTitle">Case</div>
           <div class="case-detail-price" id="caseDetailPrice">0.00 TON</div>
-          <button id="openCaseBtn" class="primary-btn open-case-btn">Открыть</button>
+          <button id="goToRouletteBtn" class="primary-btn open-case-btn">Открыть кейс</button>
         </div>
 
         <div class="case-items-title">Содержимое кейса</div>
         <div id="caseItemsGrid" class="case-items-grid"></div>
+      </section>
+
+      <!-- ROULETTE PAGE -->
+      <section id="roulettePage" class="page">
+        <div class="case-detail-header">
+          <button id="backToCaseDetailBtn" class="back-btn">← Назад</button>
+        </div>
+
+        <div class="roulette-hero">
+          <div class="case-detail-image" id="rouletteCaseImage">🎁</div>
+          <div class="case-detail-title" id="rouletteCaseTitle">Case</div>
+          <div class="case-detail-price" id="rouletteCasePrice">0.00 TON</div>
+        </div>
+
+        <div class="roulette-wrap">
+          <div class="marker"></div>
+          <div id="items" class="roulette-items"></div>
+        </div>
+
+        <button id="openCaseBtn" class="primary-btn open-case-btn">Крутить рулетку</button>
       </section>
 
       <!-- INVENTORY PAGE -->
@@ -127,6 +147,10 @@
       <button id="claimBtn" class="primary-btn">Забрать</button>
     </div>
   </div>
+
+  <audio id="spinSound" preload="auto">
+    <source src="z_uk-ruletki.mp3" type="audio/mpeg">
+  </audio>
 
   <script src="script.js"></script>
 </body>
