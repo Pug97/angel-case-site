@@ -12,6 +12,7 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
 
 const casesPage = document.getElementById('casesPage');
 const caseDetailPage = document.getElementById('caseDetailPage');
+const roulettePage = document.getElementById('roulettePage');
 const inventoryPage = document.getElementById('inventoryPage');
 const profilePage = document.getElementById('profilePage');
 
@@ -36,8 +37,16 @@ const caseDetailImage = document.getElementById('caseDetailImage');
 const caseDetailTitle = document.getElementById('caseDetailTitle');
 const caseDetailPrice = document.getElementById('caseDetailPrice');
 const caseItemsGrid = document.getElementById('caseItemsGrid');
-const openCaseBtn = document.getElementById('openCaseBtn');
+const goToRouletteBtn = document.getElementById('goToRouletteBtn');
 const backToCasesBtn = document.getElementById('backToCasesBtn');
+
+const rouletteCaseImage = document.getElementById('rouletteCaseImage');
+const rouletteCaseTitle = document.getElementById('rouletteCaseTitle');
+const rouletteCasePrice = document.getElementById('rouletteCasePrice');
+const backToCaseDetailBtn = document.getElementById('backToCaseDetailBtn');
+const openCaseBtn = document.getElementById('openCaseBtn');
+const itemsContainer = document.getElementById('items');
+const spinSound = document.getElementById('spinSound');
 
 const inventoryList = document.getElementById('inventoryList');
 
@@ -47,6 +56,12 @@ const popupSubtext = document.getElementById('popupSubtext');
 const claimBtn = document.getElementById('claimBtn');
 
 let currentCase = null;
+let currentOffset = 0;
+let idleRunning = false;
+let idleFrame = null;
+let spinFrame = null;
+let spinning = false;
+
 let balanceRevealTimer = null;
 let isBalanceExpanded = false;
 
@@ -202,9 +217,7 @@ function renderCaseDetail(caseData) {
   setText(caseDetailTitle, caseData.title || 'Case');
   setText(caseDetailPrice, `${Number(caseData.price_ton || 0).toFixed(2)} TON`);
 
-  const previewItems = (caseData.preview || []).length
-    ? caseData.preview
-    : [];
+  const previewItems = (caseData.preview || []).length ? caseData.preview : [];
 
   if (!previewItems.length) {
     caseItemsGrid.innerHTML = `<div class="inventory-empty">Предметы ещё не добавлены</div>`;
@@ -224,6 +237,100 @@ function renderCaseDetail(caseData) {
       </div>
     `;
   }).join('');
+}
+
+function renderRouletteHeader(caseData) {
+  setText(rouletteCaseImage, caseData.image || '🎁');
+  setText(rouletteCaseTitle, caseData.title || 'Case');
+  setText(rouletteCasePrice, `${Number(caseData.price_ton || 0).toFixed(2)} TON`);
+}
+
+function createRouletteItem(name, rarity) {
+  const div = document.createElement('div');
+  div.className = `item ${giftClassFromRarity(rarity)}`;
+  div.innerText = name;
+  return div;
+}
+
+function randomPreviewDrop() {
+  const pool = currentCase?.preview?.length ? currentCase.preview : [
+    { item_name: 'Gift', rarity: 'common' },
+    { item_name: '0.3 TON', rarity: 'rare' }
+  ];
+
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function buildWinningLine(prizeName, rarity) {
+  if (!itemsContainer) return null;
+
+  itemsContainer.innerHTML = '';
+  const totalItems = 90;
+  const targetIndex = 62;
+  let targetElement = null;
+
+  for (let i = 0; i < totalItems; i++) {
+    const item = i === targetIndex
+      ? { item_name: prizeName, rarity }
+      : randomPreviewDrop();
+
+    const el = createRouletteItem(item.item_name, item.rarity);
+
+    if (i === targetIndex) {
+      targetElement = el;
+    }
+
+    itemsContainer.appendChild(el);
+  }
+
+  return targetElement;
+}
+
+function setOffset(value) {
+  currentOffset = value;
+  if (itemsContainer) {
+    itemsContainer.style.transform = `translate3d(-${currentOffset}px,0,0)`;
+  }
+}
+
+function stopIdleAnimation() {
+  idleRunning = false;
+  if (idleFrame) {
+    cancelAnimationFrame(idleFrame);
+    idleFrame = null;
+  }
+}
+
+function idleAnimation() {
+  if (!idleRunning || !itemsContainer || spinning) return;
+
+  setOffset(currentOffset + 0.45);
+
+  if (itemsContainer.children.length < 160) {
+    for (let i = 0; i < 80; i++) {
+      const item = randomPreviewDrop();
+      itemsContainer.appendChild(createRouletteItem(item.item_name, item.rarity));
+    }
+  }
+
+  idleFrame = requestAnimationFrame(idleAnimation);
+}
+
+function startIdleRoulette() {
+  if (!itemsContainer) return;
+
+  stopIdleAnimation();
+  itemsContainer.innerHTML = '';
+  currentOffset = 0;
+  setOffset(0);
+
+  for (let i = 0; i < 80; i++) {
+    const item = randomPreviewDrop();
+    itemsContainer.appendChild(createRouletteItem(item.item_name, item.rarity));
+  }
+
+  idleRunning = true;
+  idleAnimation();
 }
 
 async function fetchInventory() {
@@ -293,6 +400,7 @@ function renderInventory(items) {
 function showPage(page) {
   if (casesPage) casesPage.classList.remove('active');
   if (caseDetailPage) caseDetailPage.classList.remove('active');
+  if (roulettePage) roulettePage.classList.remove('active');
   if (inventoryPage) inventoryPage.classList.remove('active');
   if (profilePage) profilePage.classList.remove('active');
 
@@ -304,11 +412,19 @@ function showPage(page) {
     if (casesPage) casesPage.classList.add('active');
     if (navCases) navCases.classList.add('active');
     setText(pageSubtitle, 'Кейсы');
+    stopIdleAnimation();
   }
 
   if (page === 'caseDetail') {
     if (caseDetailPage) caseDetailPage.classList.add('active');
     setText(pageSubtitle, currentCase?.title || 'Кейс');
+    stopIdleAnimation();
+  }
+
+  if (page === 'roulette') {
+    if (roulettePage) roulettePage.classList.add('active');
+    setText(pageSubtitle, `${currentCase?.title || 'Кейс'} • Рулетка`);
+    startIdleRoulette();
   }
 
   if (page === 'inventory') {
@@ -316,12 +432,14 @@ function showPage(page) {
     if (navInventory) navInventory.classList.add('active');
     setText(pageSubtitle, 'Инвентарь');
     fetchInventory();
+    stopIdleAnimation();
   }
 
   if (page === 'profile') {
     if (profilePage) profilePage.classList.add('active');
     if (navProfile) navProfile.classList.add('active');
     setText(pageSubtitle, 'Профиль');
+    stopIdleAnimation();
   }
 }
 
@@ -339,12 +457,33 @@ function showWinPopup(prize, itemType, tonValue) {
   if (winPopup) winPopup.style.display = 'flex';
 }
 
-async function openCurrentCase() {
-  if (!currentCase || !appState.userId) return;
+function finishSpin(result) {
+  spinning = false;
+
+  if (spinSound) {
+    spinSound.pause();
+    spinSound.currentTime = 0;
+  }
+
+  appState.balance = Number(result.newBalance || 0);
+  updateUI();
+  fetchInventory();
+
+  showWinPopup(result.prize, result.itemType, result.tonValue);
+  startIdleRoulette();
+}
+
+async function startRealSpin() {
+  if (!currentCase || !appState.userId || spinning) return;
 
   try {
-    openCaseBtn.disabled = true;
-    openCaseBtn.textContent = 'Открываем...';
+    spinning = true;
+    stopIdleAnimation();
+
+    if (openCaseBtn) {
+      openCaseBtn.disabled = true;
+      openCaseBtn.textContent = 'Крутим...';
+    }
 
     const res = await fetch(`${API_BASE}/api/cases/open`, {
       method: 'POST',
@@ -359,21 +498,65 @@ async function openCurrentCase() {
     const data = await res.json();
 
     if (!res.ok) {
+      spinning = false;
       alert(data.error || 'Ошибка открытия кейса');
+      startIdleRoulette();
       return;
     }
 
-    appState.balance = Number(data.newBalance || 0);
-    updateUI();
-    fetchInventory();
+    const targetElement = buildWinningLine(data.prize, data.rarity);
+    setOffset(0);
 
-    showWinPopup(data.prize, data.itemType, data.tonValue);
+    if (spinSound) {
+      spinSound.pause();
+      spinSound.currentTime = 0;
+      spinSound.play().catch(() => {});
+    }
+
+    requestAnimationFrame(() => {
+      const roulette = document.querySelector('.roulette-wrap');
+      if (!roulette || !targetElement) {
+        finishSpin(data);
+        return;
+      }
+
+      const targetOffset =
+        targetElement.offsetLeft +
+        targetElement.offsetWidth / 2 -
+        roulette.clientWidth / 2;
+
+      const finalOffset = Math.max(targetOffset, 0);
+      const duration = 5600;
+      const startTime = performance.now();
+
+      function easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+
+      function animate(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = easeOutCubic(progress);
+        setOffset(finalOffset * eased);
+
+        if (progress < 1) {
+          spinFrame = requestAnimationFrame(animate);
+        } else {
+          finishSpin(data);
+        }
+      }
+
+      spinFrame = requestAnimationFrame(animate);
+    });
   } catch (e) {
-    console.error('openCurrentCase error:', e);
+    console.error('startRealSpin error:', e);
+    spinning = false;
+    startIdleRoulette();
     alert('Ошибка соединения с backend');
   } finally {
-    openCaseBtn.disabled = false;
-    openCaseBtn.textContent = 'Открыть';
+    if (openCaseBtn) {
+      openCaseBtn.disabled = false;
+      openCaseBtn.textContent = 'Крутить рулетку';
+    }
   }
 }
 
@@ -544,8 +727,7 @@ async function payTon() {
     console.error('payTon error:', e);
 
     if (depositInfo) {
-      depositInfo.textContent =
-        'Платёж был отменён или кошелёк вернул ошибку.';
+      depositInfo.textContent = 'Платёж был отменён или кошелёк вернул ошибку.';
     }
   } finally {
     if (payTonBtn) {
@@ -564,8 +746,20 @@ function bindEvents() {
     backToCasesBtn.addEventListener('click', () => showPage('cases'));
   }
 
+  if (backToCaseDetailBtn) {
+    backToCaseDetailBtn.addEventListener('click', () => showPage('caseDetail'));
+  }
+
+  if (goToRouletteBtn) {
+    goToRouletteBtn.addEventListener('click', () => {
+      if (!currentCase) return;
+      renderRouletteHeader(currentCase);
+      showPage('roulette');
+    });
+  }
+
   if (openCaseBtn) {
-    openCaseBtn.addEventListener('click', openCurrentCase);
+    openCaseBtn.addEventListener('click', startRealSpin);
   }
 
   if (balanceBox) {
