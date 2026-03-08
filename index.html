@@ -33,7 +33,7 @@
         <div class="hero-card">
           <div class="hero-title">Небесные кейсы</div>
           <div class="hero-text">
-            Открывай кейсы, получай подарки и собирай их в инвентарь.
+            Открывай кейсы, выигрывай подарки и храни их в своём инвентаре.
           </div>
         </div>
 
@@ -57,6 +57,16 @@
             <div class="case-name">Divine Case</div>
             <div class="case-price">Цена: 5 TON</div>
             <button class="case-open-btn" data-case="divine" data-price="5">Открыть</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- INVENTORY PAGE -->
+      <section id="inventoryPage" class="page">
+        <div class="inventory-page-card">
+          <div class="profile-title">Инвентарь</div>
+          <div id="inventoryList" class="inventory-list">
+            <div class="inventory-empty">Пока пусто</div>
           </div>
         </div>
       </section>
@@ -103,13 +113,6 @@
             Здесь будет статус пополнения.
           </div>
         </div>
-
-        <div class="inventory-card">
-          <div class="profile-title">Инвентарь</div>
-          <div id="inventoryList" class="inventory-list">
-            <div class="inventory-empty">Пока пусто</div>
-          </div>
-        </div>
       </section>
 
       <!-- ROULETTE PAGE -->
@@ -128,8 +131,9 @@
       </section>
     </main>
 
-    <nav class="bottom-nav">
+    <nav class="bottom-nav bottom-nav-3">
       <button id="navCases" class="nav-btn active">Кейсы</button>
+      <button id="navInventory" class="nav-btn">Инвентарь</button>
       <button id="navProfile" class="nav-btn">Профиль</button>
     </nav>
   </div>
