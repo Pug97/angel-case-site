@@ -143,25 +143,6 @@ function showPage(page) {
   }
 }
 
-function buildCommentPayload(text) {
-  const encoder = new TextEncoder()
-  const textBytes = encoder.encode(text)
-  const payload = new Uint8Array(4 + textBytes.length)
-
-  payload[0] = 0
-  payload[1] = 0
-  payload[2] = 0
-  payload[3] = 0
-  payload.set(textBytes, 4)
-
-  let binary = ''
-  payload.forEach(b => {
-    binary += String.fromCharCode(b)
-  })
-
-  return btoa(binary)
-}
-
 async function payTon() {
   const amount = Number(topupAmount.value)
 
@@ -203,8 +184,7 @@ async function payTon() {
       messages: [
         {
           address: RECEIVER_WALLET,
-          amount: String(Math.round(amount * 1_000_000_000)),
-          payload: buildCommentPayload(order.comment)
+          amount: String(Math.round(amount * 1_000_000_000))
         }
       ]
     }
@@ -215,9 +195,10 @@ async function payTon() {
       `Платёж отправлен.\n` +
       `Заказ: ${order.orderId}\n` +
       `Сумма: ${amount} TON\n` +
-      `Комментарий: ${order.comment}\n\n` +
-      `Сейчас backend уже получил заказ.\n` +
-      `Автозачисление добавим следующим этапом.`
+      `Получатель: ${RECEIVER_WALLET}\n\n` +
+      `Сейчас перевод идёт без comment.\n` +
+      `Поэтому автозачисление ещё не сработает,\n` +
+      `но сам платёж должен открываться нормально.`
 
     topupAmount.value = ''
   } catch (e) {
