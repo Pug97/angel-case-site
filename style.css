@@ -43,6 +43,7 @@ body{
   background:rgba(255,255,255,.05);
   border:1px solid rgba(255,230,160,.18);
   text-align:right;
+  cursor:pointer;
 }
 
 .balance-label{
@@ -70,6 +71,7 @@ body{
 .hero-card,
 .profile-card,
 .topup-card,
+.inventory-card,
 .case-card,
 .popup-content{
   background:rgba(255,255,255,.04);
@@ -171,7 +173,8 @@ body{
 }
 
 .profile-card,
-.topup-card{
+.topup-card,
+.inventory-card{
   padding:18px;
   margin-bottom:16px;
 }
@@ -234,6 +237,96 @@ body{
   line-height:1.45;
   white-space:pre-wrap;
   word-break:break-word;
+}
+
+.inventory-list{
+  display:grid;
+  gap:10px;
+}
+
+.inventory-empty{
+  padding:18px;
+  border-radius:16px;
+  background:#232938;
+  color:#9ba6bd;
+  text-align:center;
+  font-size:14px;
+}
+
+.inventory-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px;
+  border-radius:16px;
+  background:#232938;
+  border:1px solid rgba(255,255,255,.05);
+}
+
+.inventory-left{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+
+.inventory-icon{
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  flex:0 0 40px;
+}
+
+.inventory-main{
+  min-width:0;
+}
+
+.inventory-name{
+  font-size:14px;
+  font-weight:700;
+  color:#fff;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.inventory-date{
+  margin-top:4px;
+  font-size:12px;
+  color:#98a4bb;
+}
+
+.inventory-rarity{
+  padding:8px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+  white-space:nowrap;
+}
+
+.rarity-common{
+  background:#353b46;
+  color:#e7ebf4;
+}
+
+.rarity-rare{
+  background:#376df2;
+  color:#fff;
+}
+
+.rarity-epic{
+  background:#8d4fff;
+  color:#fff;
+}
+
+.rarity-legendary{
+  background:#f2c55d;
+  color:#151515;
 }
 
 .roulette-header{
