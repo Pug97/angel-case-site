@@ -267,8 +267,8 @@ function buildWinningLine(prizeName, rarity) {
   if (!itemsContainer) return null;
 
   itemsContainer.innerHTML = '';
-  const totalItems = 90;
-  const targetIndex = 62;
+  const totalItems = 100;
+  const targetIndex = 70;
   let targetElement = null;
 
   for (let i = 0; i < totalItems; i++) {
@@ -306,10 +306,10 @@ function stopIdleAnimation() {
 function idleAnimation() {
   if (!idleRunning || !itemsContainer || spinning) return;
 
-  setOffset(currentOffset + 0.45);
+  setOffset(currentOffset + 0.75);
 
-  if (itemsContainer.children.length < 160) {
-    for (let i = 0; i < 80; i++) {
+  if (itemsContainer.children.length < 180) {
+    for (let i = 0; i < 100; i++) {
       const item = randomPreviewDrop();
       itemsContainer.appendChild(createRouletteItem(item.item_name, item.rarity));
     }
@@ -326,7 +326,7 @@ function startIdleRoulette() {
   currentOffset = 0;
   setOffset(0);
 
-  for (let i = 0; i < 80; i++) {
+  for (let i = 0; i < 100; i++) {
     const item = randomPreviewDrop();
     itemsContainer.appendChild(createRouletteItem(item.item_name, item.rarity));
   }
@@ -476,6 +476,11 @@ function showWinPopup(prize, itemType, tonValue) {
 function finishSpin(result) {
   spinning = false;
 
+  if (spinFrame) {
+    cancelAnimationFrame(spinFrame);
+    spinFrame = null;
+  }
+
   if (spinSound) {
     spinSound.pause();
     spinSound.currentTime = 0;
@@ -486,7 +491,6 @@ function finishSpin(result) {
   fetchInventory();
 
   showWinPopup(result.prize, result.itemType, result.tonValue);
-  startIdleRoulette();
 }
 
 async function startRealSpin() {
@@ -548,7 +552,7 @@ async function startRealSpin() {
 
       const finalOffset = Math.max(targetOffset, 0);
 
-      const fastDistance = finalOffset * 0.94;
+      const fastDistance = finalOffset * 0.975;
       const slowDistance = finalOffset - fastDistance;
 
       const startTime = performance.now();
@@ -563,7 +567,7 @@ async function startRealSpin() {
 
         if (elapsed <= soundDuration) {
           const p = Math.min(elapsed / soundDuration, 1);
-          const fastProgress = 1 - Math.pow(1 - p, 1.9);
+          const fastProgress = 1 - Math.pow(1 - p, 2.45);
           newOffset = fastDistance * fastProgress;
         } else {
           const extra = elapsed - soundDuration;
@@ -817,6 +821,12 @@ function bindEvents() {
   if (claimBtn) {
     claimBtn.addEventListener('click', () => {
       if (winPopup) winPopup.style.display = 'none';
+
+      setTimeout(() => {
+        if (!spinning && roulettePage && roulettePage.classList.contains('active')) {
+          startIdleRoulette();
+        }
+      }, 50);
     });
   }
 
