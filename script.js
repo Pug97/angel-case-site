@@ -2,13 +2,7 @@ const tg = window.Telegram?.WebApp
 if (tg) tg.expand()
 
 const RECEIVER_WALLET = 'UQBwcw41wYAnPcQuHFtB9a_khXQLQR3LUCq5hMsyyQGuj37k'
-
-/*
-  ВАЖНО:
-  После включения GitHub Pages замени URL ниже на свой реальный адрес сайта.
-  Пример для вашего репо обычно выглядит так:
-  https://Pug97.github.io/angel-case-site/tonconnect-manifest.json
-*/
+const API_BASE = 'https://angelcase-backend-production-f2fc.up.railway.app'
 const MANIFEST_URL = 'https://Pug97.github.io/angel-case-site/tonconnect-manifest.json'
 
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
@@ -75,18 +69,14 @@ const giftsByCase = {
 }
 
 const appState = {
-  balance: Number(localStorage.getItem('angelcase_balance') || '0'),
+  balance: 0,
   wallet: '',
   userId: '',
   userName: 'Гость'
 }
 
-function saveState() {
-  localStorage.setItem('angelcase_balance', String(appState.balance))
-}
-
 function updateUI() {
-  balanceValue.textContent = `${appState.balance.toFixed(2)} TON`
+  balanceValue.textContent = `${Number(appState.balance || 0).toFixed(2)} TON`
   telegramName.textContent = appState.userName
   telegramId.textContent = appState.userId || '—'
   walletValue.textContent = appState.wallet || 'Не подключён'
@@ -105,6 +95,26 @@ function initTelegramUser() {
     : [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Пользователь'
 
   updateUI()
+}
+
+async function fetchProfile() {
+  if (!appState.userId) return
+
+  try {
+    const res = await fetch(`${API_BASE}/api/profile/${appState.userId}`)
+    const data = await res.json()
+
+    if (!res.ok) {
+      console.error('profile_error', data)
+      return
+    }
+
+    appState.balance = Number(data.balance || 0)
+    appState.wallet = data.wallet_address || ''
+    updateUI()
+  } catch (e) {
+    console.error('fetchProfile error:', e)
+  }
 }
 
 function showPage(page) {
@@ -133,12 +143,6 @@ function showPage(page) {
   }
 }
 
-function createComment() {
-  const ts = Date.now()
-  const user = appState.userId || 'guest'
-  return `ANGELCASE:${user}:${ts}`
-}
-
 function buildCommentPayload(text) {
   const encoder = new TextEncoder()
   const textBytes = encoder.encode(text)
@@ -151,7 +155,10 @@ function buildCommentPayload(text) {
   payload.set(textBytes, 4)
 
   let binary = ''
-  payload.forEach(b => binary += String.fromCharCode(b))
+  payload.forEach(b => {
+    binary += String.fromCharCode(b)
+  })
+
   return btoa(binary)
 }
 
@@ -168,35 +175,53 @@ async function payTon() {
     return
   }
 
-  const comment = createComment()
-  const nano = String(Math.round(amount * 1_000_000_000))
-
-  const tx = {
-    validUntil: Math.floor(Date.now() / 1000) + 300,
-    messages: [
-      {
-        address: RECEIVER_WALLET,
-        amount: nano,
-        payload: buildCommentPayload(comment)
-      }
-    ]
+  if (!appState.userId) {
+    alert('Не удалось получить Telegram ID')
+    return
   }
 
   try {
-    const result = await tonConnectUI.sendTransaction(tx)
+    const createRes = await fetch(`${API_BASE}/api/deposits/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        telegramId: appState.userId,
+        username: appState.userName,
+        amount
+      })
+    })
+
+    const order = await createRes.json()
+
+    if (!createRes.ok) {
+      alert(order.error || 'Не удалось создать пополнение')
+      return
+    }
+
+    const tx = {
+      validUntil: Math.floor(Date.now() / 1000) + 300,
+      messages: [
+        {
+          address: RECEIVER_WALLET,
+          amount: String(Math.round(amount * 1_000_000_000)),
+          payload: buildCommentPayload(order.comment)
+        }
+      ]
+    }
+
+    await tonConnectUI.sendTransaction(tx)
 
     depositInfo.textContent =
-      `Перевод отправлен.\n` +
+      `Платёж отправлен.\n` +
+      `Заказ: ${order.orderId}\n` +
       `Сумма: ${amount} TON\n` +
-      `Кому: ${RECEIVER_WALLET}\n` +
-      `От кого: ${tonConnectUI.account.address}\n` +
-      `Комментарий: ${comment}\n\n` +
-      `Сейчас это только GitHub-этап.\n` +
-      `На следующем этапе мы подключим сервер,\n` +
-      `который будет проверять транзакцию и начислять баланс автоматически.`
+      `Комментарий: ${order.comment}\n\n` +
+      `Сейчас backend уже получил заказ.\n` +
+      `Автозачисление добавим следующим этапом.`
 
     topupAmount.value = ''
   } catch (e) {
+    console.error('payTon error:', e)
     depositInfo.textContent = 'Платёж был отменён или кошелёк вернул ошибку.'
   }
 }
@@ -298,17 +323,8 @@ function finishSpin() {
   idleAnimation()
 }
 
-function startSpin() {
+function startSpinAnimation() {
   if (spinning) return
-
-  if (appState.balance < currentCase.price) {
-    alert('Недостаточно баланса.\n\nНа этапе GitHub баланс пока тестовый и хранится только в браузере.')
-    return
-  }
-
-  appState.balance -= currentCase.price
-  saveState()
-  updateUI()
 
   spinning = true
   idleRunning = false
@@ -368,6 +384,41 @@ function startSpin() {
   spinFrame = requestAnimationFrame(animateSpin)
 }
 
+async function openCaseRequest(caseKey, price) {
+  if (!appState.userId) {
+    alert('Не удалось получить Telegram ID')
+    return false
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/cases/open`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        telegramId: appState.userId,
+        username: appState.userName,
+        caseKey,
+        price
+      })
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      alert(data.error || 'Ошибка открытия кейса')
+      return false
+    }
+
+    appState.balance = Number(data.newBalance || 0)
+    updateUI()
+    return true
+  } catch (e) {
+    console.error('openCaseRequest error:', e)
+    alert('Ошибка соединения с backend')
+    return false
+  }
+}
+
 function openCaseScreen(caseKey, caseName, casePrice) {
   currentCase = {
     key: caseKey,
@@ -393,42 +444,64 @@ navCases.addEventListener('click', () => showPage('cases'))
 navProfile.addEventListener('click', () => showPage('profile'))
 backToCasesBtn.addEventListener('click', () => showPage('cases'))
 payTonBtn.addEventListener('click', payTon)
-openCaseBtn.addEventListener('click', startSpin)
+
+openCaseBtn.addEventListener('click', async () => {
+  const ok = await openCaseRequest(currentCase.key, currentCase.price)
+  if (ok) {
+    startSpinAnimation()
+  }
+})
+
 claimBtn.addEventListener('click', () => {
   winPopup.style.display = 'none'
 })
 
-tonConnectUI.onStatusChange(wallet => {
-  if (wallet?.account?.address) {
-    appState.wallet = wallet.account.address
-  } else {
-    appState.wallet = ''
+tonConnectUI.onStatusChange(async wallet => {
+  try {
+    if (wallet?.account?.address) {
+      appState.wallet = wallet.account.address
+      updateUI()
+
+      if (appState.userId) {
+        await fetch(`${API_BASE}/api/profile/bind-wallet`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            telegramId: appState.userId,
+            username: appState.userName,
+            wallet: wallet.account.address
+          })
+        })
+
+        await fetchProfile()
+      }
+    } else {
+      appState.wallet = ''
+      updateUI()
+    }
+  } catch (e) {
+    console.error('bind wallet error:', e)
   }
-  updateUI()
 })
 
-/* Временная тестовая кнопка для локального баланса.
-   Можно удалить позже, когда будет backend */
-document.addEventListener('keydown', e => {
-  if (e.key === '+') {
-    appState.balance += 5
-    saveState()
-    updateUI()
-  }
-})
-
-updateUI()
 initTelegramUser()
+fetchProfile()
+updateUI()
 fillItems()
+showPage('cases')
 
 if (spinSound.readyState >= 1) {
   idleAnimation()
 } else {
-  spinSound.addEventListener('loadedmetadata', () => {
-    if (!idleFrame && !spinning) {
-      idleAnimation()
-    }
-  }, { once: true })
+  spinSound.addEventListener(
+    'loadedmetadata',
+    () => {
+      if (!idleFrame && !spinning) {
+        idleAnimation()
+      }
+    },
+    { once: true }
+  )
 
   setTimeout(() => {
     if (!idleFrame && !spinning) {
