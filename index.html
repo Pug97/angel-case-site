@@ -28,29 +28,42 @@
 
     <main class="content">
 
+      <!-- CASES PAGE -->
       <section id="casesPage" class="page active">
-        <div class="hero-card">
-          <div class="hero-title">Новые кейсы</div>
-          <div class="hero-text">
-            Открывай кейсы, выбивай Telegram-подарки и TON, храни всё в инвентаре.
-          </div>
-        </div>
-
-        <div id="casesGrid" class="cases-grid two-cols"></div>
+        <div id="casesGrid" class="cases-grid"></div>
       </section>
 
+      <!-- CASE DETAIL PAGE -->
+      <section id="caseDetailPage" class="page">
+        <div class="case-detail-header">
+          <button id="backToCasesBtn" class="back-btn">← Назад</button>
+        </div>
+
+        <div class="case-detail-hero">
+          <div class="case-detail-image" id="caseDetailImage">🎁</div>
+          <div class="case-detail-title" id="caseDetailTitle">Case</div>
+          <div class="case-detail-price" id="caseDetailPrice">0.00 TON</div>
+          <button id="openCaseBtn" class="primary-btn open-case-btn">Открыть</button>
+        </div>
+
+        <div class="case-items-title">Содержимое кейса</div>
+        <div id="caseItemsGrid" class="case-items-grid"></div>
+      </section>
+
+      <!-- INVENTORY PAGE -->
       <section id="inventoryPage" class="page">
-        <div class="inventory-page-card">
-          <div class="profile-title">Инвентарь</div>
+        <div class="section-card">
+          <div class="section-title">Инвентарь</div>
           <div id="inventoryList" class="inventory-list">
             <div class="inventory-empty">Пока пусто</div>
           </div>
         </div>
       </section>
 
+      <!-- PROFILE PAGE -->
       <section id="profilePage" class="page">
-        <div class="profile-card">
-          <div class="profile-title">Профиль</div>
+        <div class="section-card">
+          <div class="section-title">Профиль</div>
 
           <div class="profile-row">
             <span>Telegram</span>
@@ -67,42 +80,39 @@
             <span id="walletValue">Не подключён</span>
           </div>
 
-          <div id="tonConnectButton"></div>
+          <div id="tonConnectButton" class="ton-connect-wrap"></div>
         </div>
 
-        <div class="topup-card">
-          <div class="profile-title">Пополнение TON</div>
+        <div class="section-card">
+          <div class="section-title">Пополнение TON</div>
 
           <label class="field-label">Сумма в TON</label>
-          <input id="topupAmount" class="field-input" type="number" min="0.1" step="0.1" placeholder="Например, 2">
+          <input
+            id="topupAmount"
+            class="field-input"
+            type="number"
+            min="0.1"
+            step="0.1"
+            placeholder="Например, 2"
+          />
 
-          <div class="topup-wallet-box">
-            <div class="small-label">Кошелёк получателя</div>
-            <div class="wallet-address">UQBwcw41wYAnPcQuHFtB9a_khXQLQR3LUCq5hMsyyQGuj37k</div>
+          <div class="wallet-box">
+            <div class="wallet-box-label">Кошелёк получателя</div>
+            <div class="wallet-box-address">
+              UQBwcw41wYAnPcQuHFtB9a_khXQLQR3LUCq5hMsyyQGuj37k
+            </div>
           </div>
 
           <button id="payTonBtn" class="primary-btn">Отправить TON</button>
 
-          <div id="depositInfo" class="hint-text">Здесь будет статус пополнения.</div>
+          <div id="depositInfo" class="hint-text">
+            Здесь будет статус пополнения.
+          </div>
         </div>
-      </section>
-
-      <section id="roulettePage" class="page">
-        <div class="roulette-header">
-          <button id="backToCasesBtn" class="back-btn">← Назад</button>
-          <div class="roulette-case-name" id="rouletteCaseName">Case</div>
-        </div>
-
-        <div class="roulette">
-          <div class="marker"></div>
-          <div id="items"></div>
-        </div>
-
-        <button id="openCase" class="primary-btn big-btn">Открыть кейс</button>
       </section>
     </main>
 
-    <nav class="bottom-nav bottom-nav-3">
+    <nav class="bottom-nav">
       <button id="navCases" class="nav-btn active">Кейсы</button>
       <button id="navInventory" class="nav-btn">Инвентарь</button>
       <button id="navProfile" class="nav-btn">Профиль</button>
@@ -111,16 +121,12 @@
 
   <div id="winPopup" class="popup">
     <div class="popup-content">
-      <h2>Выигрыш</h2>
-      <div id="popupItem"></div>
+      <div class="popup-title">Выигрыш</div>
+      <div id="popupItem" class="popup-item">Gift</div>
       <div id="popupSubtext" class="popup-subtext"></div>
       <button id="claimBtn" class="primary-btn">Забрать</button>
     </div>
   </div>
-
-  <audio id="spinSound" preload="auto">
-    <source src="z_uk-ruletki.mp3" type="audio/mpeg">
-  </audio>
 
   <script src="script.js"></script>
 </body>
