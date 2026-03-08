@@ -76,7 +76,7 @@ const appState = {
 }
 
 function updateUI() {
-  balanceValue.textContent = `${Number(appState.balance || 0).toFixed(2)} TON`
+  balanceValue.textContent = `${Number(appState.balance || 0).toFixed(6)} TON`
   telegramName.textContent = appState.userName
   telegramId.textContent = appState.userId || '—'
   walletValue.textContent = appState.wallet || 'Не подключён'
@@ -143,6 +143,43 @@ function showPage(page) {
   }
 }
 
+async function pollDeposit(orderId) {
+  let attempts = 0
+  const maxAttempts = 36
+
+  const timer = setInterval(async () => {
+    attempts++
+
+    try {
+      const res = await fetch(`${API_BASE}/api/deposits/${orderId}`)
+      const data = await res.json()
+
+      if (res.ok && data.status === 'confirmed') {
+        clearInterval(timer)
+        depositInfo.textContent =
+          `Пополнение подтверждено.\n` +
+          `Заказ: ${orderId}\n` +
+          `Начислено: ${Number(data.amount).toFixed(6)} TON`
+        await fetchProfile()
+        return
+      }
+
+      if (attempts >= maxAttempts) {
+        clearInterval(timer) {
+        clearInterval(timer)
+        depositInfo.textContent =
+          `Платёж отправлен, но подтверждение ещё не найдено.\n` +
+          `Заказ: ${orderId}\n` +
+          `Проверь баланс позже.`
+      }
+    } catch (e) {
+      if (attempts >= maxAttempts) {
+        clearInterval(timer)
+      }
+    }
+  }, 5000)
+}
+
 async function payTon() {
   const amount = Number(topupAmount.value)
 
@@ -162,6 +199,9 @@ async function payTon() {
   }
 
   try {
+    payTonBtn.disabled = true
+    payTonBtn.textContent = 'Создание заказа...'
+
     const createRes = await fetch(`${API_BASE}/api/deposits/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -179,12 +219,22 @@ async function payTon() {
       return
     }
 
+    depositInfo.textContent =
+      `Заказ создан.\n` +
+      `Заказ: ${order.orderId}\n` +
+      `Ты ввёл: ${Number(order.requestedAmount).toFixed(2)} TON\n` +
+      `К оплате точно: ${Number(order.exactAmount).toFixed(6)} TON\n` +
+      `Сейчас откроется кошелёк.\n` +
+      `Подтверди перевод именно на эту сумму.`
+
+    payTonBtn.textContent = 'Открываем кошелёк...'
+
     const tx = {
       validUntil: Math.floor(Date.now() / 1000) + 300,
       messages: [
         {
           address: RECEIVER_WALLET,
-          amount: String(Math.round(amount * 1_000_000_000))
+          amount: order.exactNano
         }
       ]
     }
@@ -194,16 +244,19 @@ async function payTon() {
     depositInfo.textContent =
       `Платёж отправлен.\n` +
       `Заказ: ${order.orderId}\n` +
-      `Сумма: ${amount} TON\n` +
-      `Получатель: ${RECEIVER_WALLET}\n\n` +
-      `Сейчас перевод идёт без comment.\n` +
-      `Поэтому автозачисление ещё не сработает,\n` +
-      `но сам платёж должен открываться нормально.`
+      `Точная сумма: ${Number(order.exactAmount).toFixed(6)} TON\n` +
+      `Ожидаем подтверждение сети...`
 
     topupAmount.value = ''
+    pollDeposit(order.orderId)
   } catch (e) {
     console.error('payTon error:', e)
-    depositInfo.textContent = 'Платёж был отменён или кошелёк вернул ошибку.'
+    depositInfo.textContent =
+      'Платёж был отменён или кошелёк вернул ошибку.\n' +
+      'Если кошелёк открылся, проверь сумму и попробуй ещё раз.'
+  } finally {
+    payTonBtn.disabled = false
+    payTonBtn.textContent = 'Отправить TON'
   }
 }
 
