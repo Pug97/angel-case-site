@@ -253,10 +253,12 @@ function createRouletteItem(name, rarity) {
 }
 
 function randomPreviewDrop() {
-  const pool = currentCase?.preview?.length ? currentCase.preview : [
-    { item_name: 'Gift', rarity: 'common' },
-    { item_name: '0.3 TON', rarity: 'rare' }
-  ];
+  const pool = currentCase?.preview?.length
+    ? currentCase.preview
+    : [
+        { item_name: 'Gift', rarity: 'common' },
+        { item_name: '0.3 TON', rarity: 'rare' }
+      ];
 
   return pool[Math.floor(Math.random() * pool.length)];
 }
@@ -331,6 +333,20 @@ function startIdleRoulette() {
 
   idleRunning = true;
   idleAnimation();
+}
+
+function getRouletteTiming() {
+  if (spinSound && !isNaN(spinSound.duration) && spinSound.duration > 0) {
+    return {
+      soundDuration: spinSound.duration,
+      totalDuration: spinSound.duration + 1
+    };
+  }
+
+  return {
+    soundDuration: 5,
+    totalDuration: 6
+  };
 }
 
 async function fetchInventory() {
@@ -507,6 +523,10 @@ async function startRealSpin() {
     const targetElement = buildWinningLine(data.prize, data.rarity);
     setOffset(0);
 
+    const timing = getRouletteTiming();
+    const soundDuration = timing.soundDuration;
+    const totalDuration = timing.totalDuration;
+
     if (spinSound) {
       spinSound.pause();
       spinSound.currentTime = 0;
@@ -526,7 +546,10 @@ async function startRealSpin() {
         roulette.clientWidth / 2;
 
       const finalOffset = Math.max(targetOffset, 0);
-      const duration = 5600;
+
+      const soundPhaseDistance = finalOffset * 0.9;
+      const finalPhaseDistance = finalOffset - soundPhaseDistance;
+
       const startTime = performance.now();
 
       function easeOutCubic(t) {
@@ -534,13 +557,41 @@ async function startRealSpin() {
       }
 
       function animate(now) {
-        const progress = Math.min((now - startTime) / duration, 1);
-        const eased = easeOutCubic(progress);
-        setOffset(finalOffset * eased);
+        const elapsed = (now - startTime) / 1000;
+        let newOffset = 0;
 
-        if (progress < 1) {
+        if (elapsed <= soundDuration) {
+          const soundProgress = Math.min(elapsed / soundDuration, 1);
+          const syncedProgress = 1 - Math.pow(1 - soundProgress, 1.35);
+          newOffset = soundPhaseDistance * syncedProgress;
+
+          if (spinSound && spinSound.paused && elapsed < soundDuration) {
+            spinSound.play().catch(() => {});
+          }
+        } else {
+          const extraElapsed = elapsed - soundDuration;
+          const extraProgress = Math.min(extraElapsed / 1, 1);
+          const slowedProgress = easeOutCubic(extraProgress);
+
+          newOffset = soundPhaseDistance + finalPhaseDistance * slowedProgress;
+
+          if (spinSound && !spinSound.paused) {
+            spinSound.pause();
+          }
+        }
+
+        setOffset(newOffset);
+
+        if (elapsed < totalDuration) {
           spinFrame = requestAnimationFrame(animate);
         } else {
+          setOffset(finalOffset);
+
+          if (spinSound) {
+            spinSound.pause();
+            spinSound.currentTime = 0;
+          }
+
           finishSpin(data);
         }
       }
