@@ -115,6 +115,7 @@ function rarityLabel(rarity) {
   if (rarity === 'rare') return 'Rare';
   if (rarity === 'epic') return 'Epic';
   if (rarity === 'legendary') return 'Legendary';
+  if (rarity === 'mythical') return 'Mythical';
   return 'Common';
 }
 
@@ -122,6 +123,7 @@ function rarityClass(rarity) {
   if (rarity === 'rare') return 'rarity-rare';
   if (rarity === 'epic') return 'rarity-epic';
   if (rarity === 'legendary') return 'rarity-legendary';
+  if (rarity === 'mythical') return 'rarity-mythical';
   return 'rarity-common';
 }
 
@@ -129,6 +131,7 @@ function rarityEmoji(rarity) {
   if (rarity === 'rare') return '💎';
   if (rarity === 'epic') return '✨';
   if (rarity === 'legendary') return '👑';
+  if (rarity === 'mythical') return '🍾';
   return '🎁';
 }
 
@@ -136,6 +139,7 @@ function giftClassFromRarity(rarity) {
   if (rarity === 'rare') return 'rare';
   if (rarity === 'epic') return 'epic';
   if (rarity === 'legendary') return 'legendary';
+  if (rarity === 'mythical') return 'mythical';
   return 'common';
 }
 
