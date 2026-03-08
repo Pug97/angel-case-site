@@ -267,8 +267,8 @@ function buildWinningLine(prizeName, rarity) {
   if (!itemsContainer) return null;
 
   itemsContainer.innerHTML = '';
-  const totalItems = 100;
-  const targetIndex = 70;
+  const totalItems = 90;
+  const targetIndex = 62;
   let targetElement = null;
 
   for (let i = 0; i < totalItems; i++) {
@@ -306,10 +306,10 @@ function stopIdleAnimation() {
 function idleAnimation() {
   if (!idleRunning || !itemsContainer || spinning) return;
 
-  setOffset(currentOffset + 0.75);
+  setOffset(currentOffset + 0.45);
 
-  if (itemsContainer.children.length < 180) {
-    for (let i = 0; i < 100; i++) {
+  if (itemsContainer.children.length < 160) {
+    for (let i = 0; i < 80; i++) {
       const item = randomPreviewDrop();
       itemsContainer.appendChild(createRouletteItem(item.item_name, item.rarity));
     }
@@ -326,27 +326,13 @@ function startIdleRoulette() {
   currentOffset = 0;
   setOffset(0);
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 80; i++) {
     const item = randomPreviewDrop();
     itemsContainer.appendChild(createRouletteItem(item.item_name, item.rarity));
   }
 
   idleRunning = true;
   idleAnimation();
-}
-
-function getRouletteTiming() {
-  if (spinSound && !isNaN(spinSound.duration) && spinSound.duration > 0) {
-    return {
-      soundDuration: spinSound.duration,
-      totalDuration: spinSound.duration + 1
-    };
-  }
-
-  return {
-    soundDuration: 5,
-    totalDuration: 6
-  };
 }
 
 async function fetchInventory() {
@@ -527,11 +513,6 @@ async function startRealSpin() {
     const targetElement = buildWinningLine(data.prize, data.rarity);
     setOffset(0);
 
-    const timing = getRouletteTiming();
-    const soundDuration = timing.soundDuration;
-    const totalDuration = timing.totalDuration;
-    const slowPhaseDuration = 1;
-
     if (spinSound) {
       spinSound.pause();
       spinSound.currentTime = 0;
@@ -551,10 +532,7 @@ async function startRealSpin() {
         roulette.clientWidth / 2;
 
       const finalOffset = Math.max(targetOffset, 0);
-
-      const fastDistance = finalOffset * 0.975;
-      const slowDistance = finalOffset - fastDistance;
-
+      const duration = 5600;
       const startTime = performance.now();
 
       function easeOutCubic(t) {
@@ -562,28 +540,13 @@ async function startRealSpin() {
       }
 
       function animate(now) {
-        const elapsed = (now - startTime) / 1000;
-        let newOffset = 0;
-
-        if (elapsed <= soundDuration) {
-          const p = Math.min(elapsed / soundDuration, 1);
-          const fastProgress = 1 - Math.pow(1 - p, 2.45);
-          newOffset = fastDistance * fastProgress;
-        } else {
-          const extra = elapsed - soundDuration;
-          const p = Math.min(extra / slowPhaseDuration, 1);
-          const slowProgress = easeOutCubic(p);
-
-          newOffset = fastDistance + slowDistance * slowProgress;
-
-          if (spinSound && !spinSound.paused) {
-            spinSound.pause();
-          }
-        }
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = easeOutCubic(progress);
+        const newOffset = finalOffset * eased;
 
         setOffset(newOffset);
 
-        if (elapsed < totalDuration) {
+        if (progress < 1) {
           spinFrame = requestAnimationFrame(animate);
         } else {
           setOffset(finalOffset);
