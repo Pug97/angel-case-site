@@ -494,6 +494,12 @@ body{
   color:#151515;
 }
 
+.rarity-mythical{
+  background:linear-gradient(90deg,#8b0000,#d62828,#ff4d4d);
+  color:#fff;
+  box-shadow:0 0 14px rgba(255,70,70,.35);
+}
+
 .common{
   background:#353b46;
 }
@@ -509,6 +515,12 @@ body{
 .legendary{
   background:#f2c55d;
   color:#151515;
+}
+
+.mythical{
+  background:linear-gradient(135deg,#7a0000,#b31217,#ff4d4d);
+  color:#fff;
+  box-shadow:0 0 16px rgba(255,70,70,.45);
 }
 
 .bottom-nav{
