@@ -19,14 +19,15 @@ const navProfile = document.getElementById('navProfile');
 const pageSubtitle = document.getElementById('pageSubtitle');
 
 const balanceValue = document.getElementById('balanceValue');
+const balanceBox = document.querySelector('.balance-box');
 const telegramName = document.getElementById('telegramName');
 const telegramId = document.getElementById('telegramId');
 const walletValue = document.getElementById('walletValue');
-const balanceBox = document.querySelector('.balance-box');
 
 const topupAmount = document.getElementById('topupAmount');
 const payTonBtn = document.getElementById('payTonBtn');
 const depositInfo = document.getElementById('depositInfo');
+const inventoryList = document.getElementById('inventoryList');
 
 const itemsContainer = document.getElementById('items');
 const spinSound = document.getElementById('spinSound');
@@ -44,6 +45,8 @@ let currentOffset = 0;
 let idleFrame = null;
 let spinFrame = null;
 let currentCase = { key: 'angel', name: 'Angel Case', price: 1 };
+let currentWonPrize = null;
+let currentWonRarity = null;
 let balanceRevealTimer = null;
 let isBalanceExpanded = false;
 
@@ -91,24 +94,20 @@ function formatFullBalance(value) {
 }
 
 function renderBalance() {
-  const fullBalance = formatFullBalance(appState.balance);
-  const shortBalance = formatShortBalance(appState.balance);
+  const shortValue = formatShortBalance(appState.balance);
+  const fullValue = formatFullBalance(appState.balance);
 
   if (balanceValue) {
-    balanceValue.textContent = isBalanceExpanded ? fullBalance : shortBalance;
-    balanceValue.title = fullBalance;
-    balanceValue.dataset.fullBalance = fullBalance;
-    balanceValue.dataset.shortBalance = shortBalance;
+    balanceValue.textContent = isBalanceExpanded ? fullValue : shortValue;
+    balanceValue.title = fullValue;
   }
 
   if (balanceBox) {
-    balanceBox.title = `Полный баланс: ${fullBalance}`;
+    balanceBox.title = `Полный баланс: ${fullValue}`;
   }
 }
 
 function expandBalanceTemporarily() {
-  if (!balanceValue) return;
-
   isBalanceExpanded = true;
   renderBalance();
 
@@ -120,6 +119,52 @@ function expandBalanceTemporarily() {
     isBalanceExpanded = false;
     renderBalance();
   }, 2200);
+}
+
+function rarityLabel(rarity) {
+  if (rarity === 'rare') return 'Rare';
+  if (rarity === 'epic') return 'Epic';
+  if (rarity === 'legendary') return 'Legendary';
+  return 'Common';
+}
+
+function rarityClass(rarity) {
+  if (rarity === 'rare') return 'rarity-rare';
+  if (rarity === 'epic') return 'rarity-epic';
+  if (rarity === 'legendary') return 'rarity-legendary';
+  return 'rarity-common';
+}
+
+function rarityEmoji(rarity) {
+  if (rarity === 'rare') return '💎';
+  if (rarity === 'epic') return '✨';
+  if (rarity === 'legendary') return '👑';
+  return '🎁';
+}
+
+function renderInventory(items) {
+  if (!inventoryList) return;
+
+  if (!items || !items.length) {
+    inventoryList.innerHTML = `<div class="inventory-empty">Пока пусто</div>`;
+    return;
+  }
+
+  inventoryList.innerHTML = items.map(item => {
+    const date = item.created_at ? new Date(item.created_at).toLocaleString('ru-RU') : '';
+    return `
+      <div class="inventory-item">
+        <div class="inventory-left">
+          <div class="inventory-icon ${item.rarity}">${rarityEmoji(item.rarity)}</div>
+          <div class="inventory-main">
+            <div class="inventory-name">${item.item_name}</div>
+            <div class="inventory-date">${date}</div>
+          </div>
+        </div>
+        <div class="inventory-rarity ${rarityClass(item.rarity)}">${rarityLabel(item.rarity)}</div>
+      </div>
+    `;
+  }).join('');
 }
 
 function updateUI() {
@@ -164,6 +209,24 @@ async function fetchProfile() {
   }
 }
 
+async function fetchInventory() {
+  if (!appState.userId) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/inventory/${appState.userId}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error('inventory_error', data);
+      return;
+    }
+
+    renderInventory(data.items || []);
+  } catch (e) {
+    console.error('fetchInventory error:', e);
+  }
+}
+
 function showPage(page) {
   if (casesPage) casesPage.classList.remove('active');
   if (profilePage) profilePage.classList.remove('active');
@@ -182,6 +245,7 @@ function showPage(page) {
     if (profilePage) profilePage.classList.add('active');
     if (navProfile) navProfile.classList.add('active');
     setText(pageSubtitle, 'Профиль');
+    fetchInventory();
   }
 
   if (page === 'roulette') {
@@ -334,6 +398,13 @@ function randomGift() {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
+function giftClassFromRarity(rarity) {
+  if (rarity === 'rare') return 'rare';
+  if (rarity === 'epic') return 'epic';
+  if (rarity === 'legendary') return 'legendary';
+  return 'common';
+}
+
 function fillItems(count = 140) {
   if (!itemsContainer) return;
   itemsContainer.innerHTML = '';
@@ -347,6 +418,38 @@ function appendMoreItems(count = 100) {
   for (let i = 0; i < count; i++) {
     itemsContainer.appendChild(createItem(randomGift()));
   }
+}
+
+function buildWinningLine(prizeName, rarity) {
+  if (!itemsContainer) return null;
+
+  itemsContainer.innerHTML = '';
+  const totalItems = 90;
+  const targetIndex = 62;
+  let targetElement = null;
+
+  for (let i = 0; i < totalItems; i++) {
+    let gift;
+    if (i === targetIndex) {
+      gift = {
+        name: prizeName,
+        class: giftClassFromRarity(rarity)
+      };
+    } else {
+      gift = randomGift();
+    }
+
+    const item = createItem(gift);
+
+    if (i === targetIndex) {
+      item.dataset.winTarget = '1';
+      targetElement = item;
+    }
+
+    itemsContainer.appendChild(item);
+  }
+
+  return targetElement;
 }
 
 function setOffset(value) {
@@ -386,26 +489,6 @@ function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
 }
 
-function findWinningItem() {
-  const marker = document.querySelector('.marker');
-  if (!marker) return null;
-
-  const markerRect = marker.getBoundingClientRect();
-  const markerX = markerRect.left + markerRect.width / 2;
-
-  const items = document.querySelectorAll('.item');
-  let winItem = null;
-
-  items.forEach(item => {
-    const rect = item.getBoundingClientRect();
-    if (rect.left <= markerX && rect.right >= markerX) {
-      winItem = item;
-    }
-  });
-
-  return winItem;
-}
-
 function showWinPopup(prize) {
   setText(popupItem, prize);
   if (winPopup) winPopup.style.display = 'flex';
@@ -417,9 +500,9 @@ function finishSpin() {
     spinSound.currentTime = 0;
   }
 
-  const winItem = findWinningItem();
-  if (winItem) {
-    showWinPopup(winItem.innerText);
+  if (currentWonPrize) {
+    showWinPopup(currentWonPrize);
+    fetchInventory();
   }
 
   spinning = false;
@@ -427,7 +510,7 @@ function finishSpin() {
   idleAnimation();
 }
 
-function startSpinAnimation() {
+function startSpinAnimation(prizeName, rarity) {
   if (spinning) return;
 
   spinning = true;
@@ -443,9 +526,18 @@ function startSpinAnimation() {
     spinFrame = null;
   }
 
-  if (itemsContainer && itemsContainer.children.length < 300) {
-    appendMoreItems(220);
+  currentWonPrize = prizeName;
+  currentWonRarity = rarity;
+
+  const targetElement = buildWinningLine(prizeName, rarity);
+
+  if (!targetElement || !itemsContainer) {
+    spinning = false;
+    return;
   }
+
+  currentOffset = 0;
+  setOffset(0);
 
   if (spinSound) {
     spinSound.pause();
@@ -453,47 +545,44 @@ function startSpinAnimation() {
     spinSound.play().catch(() => {});
   }
 
-  const timing = getSpinDuration();
-  const soundDuration = timing.soundDuration;
-  const totalDuration = timing.totalDuration;
+  requestAnimationFrame(() => {
+    const roulette = document.querySelector('.roulette');
+    if (!roulette) return;
 
-  const startOffset = currentOffset;
-  const pixelsPerSecond = 950;
-  const extraTravel = 1100 + Math.random() * 350;
-  const totalTravel = (pixelsPerSecond * soundDuration) + extraTravel;
+    const timing = getSpinDuration();
+    const totalDuration = timing.totalDuration;
 
-  const startTime = performance.now();
+    const targetOffset =
+      targetElement.offsetLeft +
+      targetElement.offsetWidth / 2 -
+      roulette.clientWidth / 2;
 
-  function animateSpin(now) {
-    const elapsed = (now - startTime) / 1000;
-    const progress = Math.min(elapsed / totalDuration, 1);
-    const eased = easeOutCubic(progress);
+    const finalOffset = Math.max(targetOffset, 0);
+    const startTime = performance.now();
 
-    const newOffset = startOffset + totalTravel * eased;
-    setOffset(newOffset);
+    function animateSpin(now) {
+      const elapsed = (now - startTime) / 1000;
+      const progress = Math.min(elapsed / totalDuration, 1);
+      const eased = easeOutCubic(progress);
 
-    if (itemsContainer && itemsContainer.children.length < 220) {
-      appendMoreItems(120);
+      const newOffset = finalOffset * eased;
+      setOffset(newOffset);
+
+      if (progress < 1) {
+        spinFrame = requestAnimationFrame(animateSpin);
+      } else {
+        finishSpin();
+      }
     }
 
-    if (spinSound && elapsed >= soundDuration && !spinSound.paused) {
-      spinSound.pause();
-    }
-
-    if (progress < 1) {
-      spinFrame = requestAnimationFrame(animateSpin);
-    } else {
-      finishSpin();
-    }
-  }
-
-  spinFrame = requestAnimationFrame(animateSpin);
+    spinFrame = requestAnimationFrame(animateSpin);
+  });
 }
 
 async function openCaseRequest(caseKey, price) {
   if (!appState.userId) {
     alert('Не удалось получить Telegram ID');
-    return false;
+    return null;
   }
 
   try {
@@ -512,16 +601,16 @@ async function openCaseRequest(caseKey, price) {
 
     if (!res.ok) {
       alert(data.error || 'Ошибка открытия кейса');
-      return false;
+      return null;
     }
 
     appState.balance = Number(data.newBalance || 0);
     updateUI();
-    return true;
+    return data;
   } catch (e) {
     console.error('openCaseRequest error:', e);
     alert('Ошибка соединения с backend');
-    return false;
+    return null;
   }
 }
 
@@ -553,15 +642,14 @@ function bindEvents() {
   if (payTonBtn) payTonBtn.addEventListener('click', payTon);
 
   if (balanceBox) {
-    balanceBox.style.cursor = 'pointer';
     balanceBox.addEventListener('click', expandBalanceTemporarily);
   }
 
   if (openCaseBtn) {
     openCaseBtn.addEventListener('click', async () => {
-      const ok = await openCaseRequest(currentCase.key, currentCase.price);
-      if (ok) {
-        startSpinAnimation();
+      const result = await openCaseRequest(currentCase.key, currentCase.price);
+      if (result) {
+        startSpinAnimation(result.prize, result.rarity);
       }
     });
   }
@@ -604,6 +692,7 @@ function bindEvents() {
 function initApp() {
   initTelegramUser();
   fetchProfile();
+  fetchInventory();
   updateUI();
   fillItems();
   showPage('cases');
