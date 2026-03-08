@@ -22,6 +22,7 @@ const balanceValue = document.getElementById('balanceValue');
 const telegramName = document.getElementById('telegramName');
 const telegramId = document.getElementById('telegramId');
 const walletValue = document.getElementById('walletValue');
+const balanceBox = document.querySelector('.balance-box');
 
 const topupAmount = document.getElementById('topupAmount');
 const payTonBtn = document.getElementById('payTonBtn');
@@ -43,6 +44,8 @@ let currentOffset = 0;
 let idleFrame = null;
 let spinFrame = null;
 let currentCase = { key: 'angel', name: 'Angel Case', price: 1 };
+let balanceRevealTimer = null;
+let isBalanceExpanded = false;
 
 const giftsByCase = {
   angel: [
@@ -79,8 +82,48 @@ function setText(el, value) {
   if (el) el.textContent = value;
 }
 
+function formatShortBalance(value) {
+  return `${Number(value || 0).toFixed(3)} TON`;
+}
+
+function formatFullBalance(value) {
+  return `${Number(value || 0).toFixed(6)} TON`;
+}
+
+function renderBalance() {
+  const fullBalance = formatFullBalance(appState.balance);
+  const shortBalance = formatShortBalance(appState.balance);
+
+  if (balanceValue) {
+    balanceValue.textContent = isBalanceExpanded ? fullBalance : shortBalance;
+    balanceValue.title = fullBalance;
+    balanceValue.dataset.fullBalance = fullBalance;
+    balanceValue.dataset.shortBalance = shortBalance;
+  }
+
+  if (balanceBox) {
+    balanceBox.title = `Полный баланс: ${fullBalance}`;
+  }
+}
+
+function expandBalanceTemporarily() {
+  if (!balanceValue) return;
+
+  isBalanceExpanded = true;
+  renderBalance();
+
+  if (balanceRevealTimer) {
+    clearTimeout(balanceRevealTimer);
+  }
+
+  balanceRevealTimer = setTimeout(() => {
+    isBalanceExpanded = false;
+    renderBalance();
+  }, 2200);
+}
+
 function updateUI() {
-  setText(balanceValue, `${Number(appState.balance || 0).toFixed(6)} TON`);
+  renderBalance();
   setText(telegramName, appState.userName);
   setText(telegramId, appState.userId || '—');
   setText(walletValue, appState.wallet || 'Не подключён');
@@ -508,6 +551,11 @@ function bindEvents() {
   if (navProfile) navProfile.addEventListener('click', () => showPage('profile'));
   if (backToCasesBtn) backToCasesBtn.addEventListener('click', () => showPage('cases'));
   if (payTonBtn) payTonBtn.addEventListener('click', payTon);
+
+  if (balanceBox) {
+    balanceBox.style.cursor = 'pointer';
+    balanceBox.addEventListener('click', expandBalanceTemporarily);
+  }
 
   if (openCaseBtn) {
     openCaseBtn.addEventListener('click', async () => {
