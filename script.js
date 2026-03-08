@@ -11,17 +11,18 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
 });
 
 const casesPage = document.getElementById('casesPage');
+const caseDetailPage = document.getElementById('caseDetailPage');
 const inventoryPage = document.getElementById('inventoryPage');
 const profilePage = document.getElementById('profilePage');
-const roulettePage = document.getElementById('roulettePage');
 
 const navCases = document.getElementById('navCases');
 const navInventory = document.getElementById('navInventory');
 const navProfile = document.getElementById('navProfile');
 const pageSubtitle = document.getElementById('pageSubtitle');
 
-const balanceValue = document.getElementById('balanceValue');
 const balanceBox = document.querySelector('.balance-box');
+const balanceValue = document.getElementById('balanceValue');
+
 const telegramName = document.getElementById('telegramName');
 const telegramId = document.getElementById('telegramId');
 const walletValue = document.getElementById('walletValue');
@@ -29,32 +30,25 @@ const walletValue = document.getElementById('walletValue');
 const topupAmount = document.getElementById('topupAmount');
 const payTonBtn = document.getElementById('payTonBtn');
 const depositInfo = document.getElementById('depositInfo');
-const inventoryList = document.getElementById('inventoryList');
-const casesGrid = document.getElementById('casesGrid');
 
-const itemsContainer = document.getElementById('items');
-const spinSound = document.getElementById('spinSound');
-const openCaseBtn = document.getElementById('openCase');
-const rouletteCaseName = document.getElementById('rouletteCaseName');
+const casesGrid = document.getElementById('casesGrid');
+const caseDetailImage = document.getElementById('caseDetailImage');
+const caseDetailTitle = document.getElementById('caseDetailTitle');
+const caseDetailPrice = document.getElementById('caseDetailPrice');
+const caseItemsGrid = document.getElementById('caseItemsGrid');
+const openCaseBtn = document.getElementById('openCaseBtn');
 const backToCasesBtn = document.getElementById('backToCasesBtn');
+
+const inventoryList = document.getElementById('inventoryList');
 
 const winPopup = document.getElementById('winPopup');
 const popupItem = document.getElementById('popupItem');
 const popupSubtext = document.getElementById('popupSubtext');
 const claimBtn = document.getElementById('claimBtn');
 
-let idleRunning = true;
-let spinning = false;
-let currentOffset = 0;
-let idleFrame = null;
-let spinFrame = null;
+let currentCase = null;
 let balanceRevealTimer = null;
 let isBalanceExpanded = false;
-
-let currentCase = null;
-let currentWonPrize = null;
-let currentWonType = null;
-let currentWonValue = 0;
 
 const appState = {
   balance: 0,
@@ -63,15 +57,6 @@ const appState = {
   userName: 'Гость',
   cases: []
 };
-
-const fallbackPreview = [
-  { item_name: 'Angel Feather', rarity: 'common', item_type: 'gift' },
-  { item_name: 'Halo Shard', rarity: 'common', item_type: 'gift' },
-  { item_name: 'Sky Box', rarity: 'rare', item_type: 'gift' },
-  { item_name: 'Holy Ring', rarity: 'epic', item_type: 'gift' },
-  { item_name: 'Angel Crown', rarity: 'legendary', item_type: 'gift' },
-  { item_name: '1.00 TON', rarity: 'rare', item_type: 'ton_balance' }
-];
 
 function setText(el, value) {
   if (el) el.textContent = value;
@@ -201,20 +186,41 @@ function renderCases(cases) {
   }
 
   casesGrid.innerHTML = cases.map(item => {
-    const previewText = (item.preview || [])
-      .slice(0, 4)
-      .map(p => `${rarityEmoji(p.rarity)} ${p.item_name}`)
-      .join(' • ');
+    return `
+      <div class="case-tile" data-case-key="${item.case_key}">
+        <div class="case-tile-image">${item.image || '🎁'}</div>
+        <div class="case-tile-title">${item.title}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderCaseDetail(caseData) {
+  currentCase = caseData;
+
+  setText(caseDetailImage, caseData.image || '🎁');
+  setText(caseDetailTitle, caseData.title || 'Case');
+  setText(caseDetailPrice, `${Number(caseData.price_ton || 0).toFixed(2)} TON`);
+
+  const previewItems = (caseData.preview || []).length
+    ? caseData.preview
+    : [];
+
+  if (!previewItems.length) {
+    caseItemsGrid.innerHTML = `<div class="inventory-empty">Предметы ещё не добавлены</div>`;
+    return;
+  }
+
+  caseItemsGrid.innerHTML = previewItems.map(item => {
+    const itemImage =
+      item.image ||
+      (item.item_type === 'ton_balance' ? '💸' : rarityEmoji(item.rarity));
 
     return `
-      <div class="case-card">
-        <div class="case-glow"></div>
-        <div class="case-name">${item.image || '🎁'} ${item.title}</div>
-        <div class="case-subtitle">${item.subtitle || ''}</div>
-        <div class="case-price">Цена: ${Number(item.price_ton).toFixed(2)} TON</div>
-        <div class="case-rtp">RTP: ~${Math.round(Number(item.rtp_target || 0.7) * 100)}%</div>
-        <div class="case-preview">${previewText || 'Награды появятся здесь'}</div>
-        <button class="case-open-btn" data-case-key="${item.case_key}">Открыть</button>
+      <div class="case-item-card">
+        <div class="case-item-image">${itemImage}</div>
+        <div class="case-item-name">${item.item_name}</div>
+        <div class="case-item-value">${Number(item.ton_value || 0).toFixed(3)} TON</div>
       </div>
     `;
   }).join('');
@@ -286,9 +292,9 @@ function renderInventory(items) {
 
 function showPage(page) {
   if (casesPage) casesPage.classList.remove('active');
+  if (caseDetailPage) caseDetailPage.classList.remove('active');
   if (inventoryPage) inventoryPage.classList.remove('active');
   if (profilePage) profilePage.classList.remove('active');
-  if (roulettePage) roulettePage.classList.remove('active');
 
   if (navCases) navCases.classList.remove('active');
   if (navInventory) navInventory.classList.remove('active');
@@ -298,6 +304,11 @@ function showPage(page) {
     if (casesPage) casesPage.classList.add('active');
     if (navCases) navCases.classList.add('active');
     setText(pageSubtitle, 'Кейсы');
+  }
+
+  if (page === 'caseDetail') {
+    if (caseDetailPage) caseDetailPage.classList.add('active');
+    setText(pageSubtitle, currentCase?.title || 'Кейс');
   }
 
   if (page === 'inventory') {
@@ -312,10 +323,108 @@ function showPage(page) {
     if (navProfile) navProfile.classList.add('active');
     setText(pageSubtitle, 'Профиль');
   }
+}
 
-  if (page === 'roulette') {
-    if (roulettePage) roulettePage.classList.add('active');
-    setText(pageSubtitle, currentCase?.title || 'Кейс');
+function showWinPopup(prize, itemType, tonValue) {
+  setText(popupItem, prize);
+
+  if (popupSubtext) {
+    if (itemType === 'ton_balance') {
+      popupSubtext.textContent = `На баланс начислено ${Number(tonValue).toFixed(3)} TON`;
+    } else {
+      popupSubtext.textContent = `Предмет добавлен в инвентарь • ${Number(tonValue).toFixed(3)} TON`;
+    }
+  }
+
+  if (winPopup) winPopup.style.display = 'flex';
+}
+
+async function openCurrentCase() {
+  if (!currentCase || !appState.userId) return;
+
+  try {
+    openCaseBtn.disabled = true;
+    openCaseBtn.textContent = 'Открываем...';
+
+    const res = await fetch(`${API_BASE}/api/cases/open`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        telegramId: appState.userId,
+        username: appState.userName,
+        caseKey: currentCase.case_key
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || 'Ошибка открытия кейса');
+      return;
+    }
+
+    appState.balance = Number(data.newBalance || 0);
+    updateUI();
+    fetchInventory();
+
+    showWinPopup(data.prize, data.itemType, data.tonValue);
+  } catch (e) {
+    console.error('openCurrentCase error:', e);
+    alert('Ошибка соединения с backend');
+  } finally {
+    openCaseBtn.disabled = false;
+    openCaseBtn.textContent = 'Открыть';
+  }
+}
+
+async function sellInventoryItem(inventoryId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/inventory/sell`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        telegramId: appState.userId,
+        inventoryId
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || 'Не удалось продать предмет');
+      return;
+    }
+
+    appState.balance = Number(data.newBalance || 0);
+    updateUI();
+    fetchInventory();
+  } catch (e) {
+    console.error('sellInventoryItem error:', e);
+  }
+}
+
+async function withdrawInventoryItem(inventoryId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/inventory/withdraw`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        telegramId: appState.userId,
+        inventoryId
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || 'Не удалось создать заявку на вывод');
+      return;
+    }
+
+    alert('Заявка на вывод создана');
+    fetchInventory();
+  } catch (e) {
+    console.error('withdrawInventoryItem error:', e);
   }
 }
 
@@ -332,18 +441,21 @@ async function pollDeposit(orderId) {
 
       if (res.ok && data.status === 'confirmed') {
         clearInterval(timer);
+
         if (depositInfo) {
           depositInfo.textContent =
             `Пополнение подтверждено.\n` +
             `Заказ: ${orderId}\n` +
             `Начислено: ${Number(data.amount).toFixed(6)} TON`;
         }
+
         await fetchProfile();
         return;
       }
 
       if (attempts >= maxAttempts) {
         clearInterval(timer);
+
         if (depositInfo) {
           depositInfo.textContent =
             `Платёж отправлен, но подтверждение ещё не найдено.\n` +
@@ -430,8 +542,10 @@ async function payTon() {
     pollDeposit(order.orderId);
   } catch (e) {
     console.error('payTon error:', e);
+
     if (depositInfo) {
-      depositInfo.textContent = 'Платёж был отменён или кошелёк вернул ошибку.';
+      depositInfo.textContent =
+        'Платёж был отменён или кошелёк вернул ошибку.';
     }
   } finally {
     if (payTonBtn) {
@@ -441,292 +555,45 @@ async function payTon() {
   }
 }
 
-function createItem(gift) {
-  const div = document.createElement('div');
-  div.className = `item ${giftClassFromRarity(gift.rarity)}`;
-  div.innerText = gift.item_name;
-  return div;
-}
-
-function randomGift() {
-  const pool = currentCase?.preview?.length ? currentCase.preview : fallbackPreview;
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-function buildWinningLine(prizeName, rarity) {
-  if (!itemsContainer) return null;
-
-  itemsContainer.innerHTML = '';
-  const totalItems = 90;
-  const targetIndex = 62;
-  let targetElement = null;
-
-  for (let i = 0; i < totalItems; i++) {
-    const gift = i === targetIndex
-      ? { item_name: prizeName, rarity }
-      : randomGift();
-
-    const item = createItem(gift);
-
-    if (i === targetIndex) {
-      item.dataset.winTarget = '1';
-      targetElement = item;
-    }
-
-    itemsContainer.appendChild(item);
-  }
-
-  return targetElement;
-}
-
-function setOffset(value) {
-  currentOffset = value;
-  if (itemsContainer) {
-    itemsContainer.style.transform = `translate3d(-${currentOffset}px, 0, 0)`;
-  }
-}
-
-function idleAnimation() {
-  if (!idleRunning || !itemsContainer) return;
-
-  setOffset(currentOffset + 0.45);
-
-  if (itemsContainer.children.length < 180) {
-    for (let i = 0; i < 100; i++) {
-      itemsContainer.appendChild(createItem(randomGift()));
-    }
-  }
-
-  idleFrame = requestAnimationFrame(idleAnimation);
-}
-
-function getSpinDuration() {
-  if (spinSound && !isNaN(spinSound.duration) && spinSound.duration > 0) {
-    return {
-      totalDuration: spinSound.duration + 1
-    };
-  }
-
-  return {
-    totalDuration: 6
-  };
-}
-
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
-}
-
-function showWinPopup(prize, itemType, tonValue) {
-  setText(popupItem, prize);
-
-  if (popupSubtext) {
-    if (itemType === 'ton_balance') {
-      popupSubtext.textContent = `На баланс начислено ${Number(tonValue).toFixed(3)} TON`;
-    } else {
-      popupSubtext.textContent = `Предмет добавлен в инвентарь • ${Number(tonValue).toFixed(3)} TON`;
-    }
-  }
-
-  if (winPopup) winPopup.style.display = 'flex';
-}
-
-function finishSpin() {
-  if (spinSound) {
-    spinSound.pause();
-    spinSound.currentTime = 0;
-  }
-
-  if (currentWonPrize) {
-    showWinPopup(currentWonPrize, currentWonType, currentWonValue);
-    fetchProfile();
-    fetchInventory();
-  }
-
-  spinning = false;
-  idleRunning = true;
-  idleAnimation();
-}
-
-function startSpinAnimation(prizeName, rarity, itemType, tonValue) {
-  if (spinning) return;
-
-  spinning = true;
-  idleRunning = false;
-
-  if (idleFrame) {
-    cancelAnimationFrame(idleFrame);
-    idleFrame = null;
-  }
-
-  if (spinFrame) {
-    cancelAnimationFrame(spinFrame);
-    spinFrame = null;
-  }
-
-  currentWonPrize = prizeName;
-  currentWonType = itemType;
-  currentWonValue = tonValue;
-
-  const targetElement = buildWinningLine(prizeName, rarity);
-  if (!targetElement || !itemsContainer) {
-    spinning = false;
-    return;
-  }
-
-  currentOffset = 0;
-  setOffset(0);
-
-  if (spinSound) {
-    spinSound.pause();
-    spinSound.currentTime = 0;
-    spinSound.play().catch(() => {});
-  }
-
-  requestAnimationFrame(() => {
-    const roulette = document.querySelector('.roulette');
-    if (!roulette) return;
-
-    const timing = getSpinDuration();
-    const totalDuration = timing.totalDuration;
-
-    const targetOffset =
-      targetElement.offsetLeft +
-      targetElement.offsetWidth / 2 -
-      roulette.clientWidth / 2;
-
-    const finalOffset = Math.max(targetOffset, 0);
-    const startTime = performance.now();
-
-    function animateSpin(now) {
-      const elapsed = (now - startTime) / 1000;
-      const progress = Math.min(elapsed / totalDuration, 1);
-      const eased = easeOutCubic(progress);
-
-      const newOffset = finalOffset * eased;
-      setOffset(newOffset);
-
-      if (progress < 1) {
-        spinFrame = requestAnimationFrame(animateSpin);
-      } else {
-        finishSpin();
-      }
-    }
-
-    spinFrame = requestAnimationFrame(animateSpin);
-  });
-}
-
-async function openCaseRequest(caseKey) {
-  if (!appState.userId) {
-    alert('Не удалось получить Telegram ID');
-    return null;
-  }
-
-  try {
-    const res = await fetch(`${API_BASE}/api/cases/open`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        telegramId: appState.userId,
-        username: appState.userName,
-        caseKey
-      })
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.error || 'Ошибка открытия кейса');
-      return null;
-    }
-
-    appState.balance = Number(data.newBalance || 0);
-    updateUI();
-    return data;
-  } catch (e) {
-    console.error('openCaseRequest error:', e);
-    alert('Ошибка соединения с backend');
-    return null;
-  }
-}
-
-function openCaseScreen(caseKey) {
-  currentCase = appState.cases.find(c => c.case_key === caseKey) || null;
-  setText(
-    rouletteCaseName,
-    `${currentCase?.title || 'Case'} • ${Number(currentCase?.price_ton || 0).toFixed(2)} TON`
-  );
-  currentOffset = 0;
-  if (itemsContainer) itemsContainer.innerHTML = '';
-  showPage('roulette');
-  idleAnimation();
-}
-
-async function sellInventoryItem(inventoryId) {
-  try {
-    const res = await fetch(`${API_BASE}/api/inventory/sell`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        telegramId: appState.userId,
-        inventoryId
-      })
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      alert(data.error || 'Не удалось продать предмет');
-      return;
-    }
-
-    appState.balance = Number(data.newBalance || 0);
-    updateUI();
-    fetchInventory();
-  } catch (e) {
-    console.error('sellInventoryItem error:', e);
-  }
-}
-
-async function withdrawInventoryItem(inventoryId) {
-  try {
-    const res = await fetch(`${API_BASE}/api/inventory/withdraw`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        telegramId: appState.userId,
-        inventoryId
-      })
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      alert(data.error || 'Не удалось создать заявку на вывод');
-      return;
-    }
-
-    alert('Заявка на вывод создана');
-    fetchInventory();
-  } catch (e) {
-    console.error('withdrawInventoryItem error:', e);
-  }
-}
-
 function bindEvents() {
   if (navCases) navCases.addEventListener('click', () => showPage('cases'));
   if (navInventory) navInventory.addEventListener('click', () => showPage('inventory'));
   if (navProfile) navProfile.addEventListener('click', () => showPage('profile'));
-  if (backToCasesBtn) backToCasesBtn.addEventListener('click', () => showPage('cases'));
-  if (payTonBtn) payTonBtn.addEventListener('click', payTon);
+
+  if (backToCasesBtn) {
+    backToCasesBtn.addEventListener('click', () => showPage('cases'));
+  }
+
+  if (openCaseBtn) {
+    openCaseBtn.addEventListener('click', openCurrentCase);
+  }
 
   if (balanceBox) {
     balanceBox.addEventListener('click', expandBalanceTemporarily);
   }
 
+  if (claimBtn) {
+    claimBtn.addEventListener('click', () => {
+      if (winPopup) winPopup.style.display = 'none';
+    });
+  }
+
+  if (payTonBtn) {
+    payTonBtn.addEventListener('click', payTon);
+  }
+
   if (casesGrid) {
     casesGrid.addEventListener('click', e => {
-      const btn = e.target.closest('.case-open-btn');
-      if (!btn) return;
-      openCaseScreen(btn.dataset.caseKey);
+      const tile = e.target.closest('.case-tile');
+      if (!tile) return;
+
+      const caseKey = tile.dataset.caseKey;
+      const caseData = appState.cases.find(item => item.case_key === caseKey);
+
+      if (!caseData) return;
+
+      renderCaseDetail(caseData);
+      showPage('caseDetail');
     });
   }
 
@@ -745,22 +612,6 @@ function bindEvents() {
       if (action === 'withdraw') {
         withdrawInventoryItem(inventoryId);
       }
-    });
-  }
-
-  if (openCaseBtn) {
-    openCaseBtn.addEventListener('click', async () => {
-      if (!currentCase) return;
-      const result = await openCaseRequest(currentCase.case_key);
-      if (result) {
-        startSpinAnimation(result.prize, result.rarity, result.itemType, result.tonValue);
-      }
-    });
-  }
-
-  if (claimBtn) {
-    claimBtn.addEventListener('click', () => {
-      if (winPopup) winPopup.style.display = 'none';
     });
   }
 
