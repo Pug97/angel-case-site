@@ -30,6 +30,7 @@ const topupAmount = document.getElementById('topupAmount');
 const payTonBtn = document.getElementById('payTonBtn');
 const depositInfo = document.getElementById('depositInfo');
 const inventoryList = document.getElementById('inventoryList');
+const casesGrid = document.getElementById('casesGrid');
 
 const itemsContainer = document.getElementById('items');
 const spinSound = document.getElementById('spinSound');
@@ -39,6 +40,7 @@ const backToCasesBtn = document.getElementById('backToCasesBtn');
 
 const winPopup = document.getElementById('winPopup');
 const popupItem = document.getElementById('popupItem');
+const popupSubtext = document.getElementById('popupSubtext');
 const claimBtn = document.getElementById('claimBtn');
 
 let idleRunning = true;
@@ -46,42 +48,30 @@ let spinning = false;
 let currentOffset = 0;
 let idleFrame = null;
 let spinFrame = null;
-let currentCase = { key: 'angel', name: 'Angel Case', price: 1 };
-let currentWonPrize = null;
-let currentWonRarity = null;
 let balanceRevealTimer = null;
 let isBalanceExpanded = false;
 
-const giftsByCase = {
-  angel: [
-    { name: 'Small Gift', class: 'common' },
-    { name: 'Angel Feather', class: 'common' },
-    { name: 'Golden Wing', class: 'rare' },
-    { name: 'Heaven Box', class: 'rare' },
-    { name: 'Divine Halo', class: 'epic' },
-    { name: 'Angel Crown', class: 'legendary' }
-  ],
-  heaven: [
-    { name: 'Silver Halo', class: 'common' },
-    { name: 'Sky Gift', class: 'rare' },
-    { name: 'Holy Box', class: 'rare' },
-    { name: 'Saint Relic', class: 'epic' },
-    { name: 'Heaven Crown', class: 'legendary' }
-  ],
-  divine: [
-    { name: 'Sacred Gift', class: 'rare' },
-    { name: 'Divine Feather', class: 'epic' },
-    { name: 'Light Relic', class: 'epic' },
-    { name: 'Celestial Crown', class: 'legendary' }
-  ]
-};
+let currentCase = null;
+let currentWonPrize = null;
+let currentWonType = null;
+let currentWonValue = 0;
 
 const appState = {
   balance: 0,
   wallet: '',
   userId: '',
-  userName: 'Гость'
+  userName: 'Гость',
+  cases: []
 };
+
+const fallbackPreview = [
+  { item_name: 'Angel Feather', rarity: 'common', item_type: 'gift' },
+  { item_name: 'Halo Shard', rarity: 'common', item_type: 'gift' },
+  { item_name: 'Sky Box', rarity: 'rare', item_type: 'gift' },
+  { item_name: 'Holy Ring', rarity: 'epic', item_type: 'gift' },
+  { item_name: 'Angel Crown', rarity: 'legendary', item_type: 'gift' },
+  { item_name: '1.00 TON', rarity: 'rare', item_type: 'ton_balance' }
+];
 
 function setText(el, value) {
   if (el) el.textContent = value;
@@ -142,29 +132,11 @@ function rarityEmoji(rarity) {
   return '🎁';
 }
 
-function renderInventory(items) {
-  if (!inventoryList) return;
-
-  if (!items || !items.length) {
-    inventoryList.innerHTML = `<div class="inventory-empty">Пока пусто</div>`;
-    return;
-  }
-
-  inventoryList.innerHTML = items.map(item => {
-    const date = item.created_at ? new Date(item.created_at).toLocaleString('ru-RU') : '';
-    return `
-      <div class="inventory-item">
-        <div class="inventory-left">
-          <div class="inventory-icon ${item.rarity}">${rarityEmoji(item.rarity)}</div>
-          <div class="inventory-main">
-            <div class="inventory-name">${item.item_name}</div>
-            <div class="inventory-date">${date}</div>
-          </div>
-        </div>
-        <div class="inventory-rarity ${rarityClass(item.rarity)}">${rarityLabel(item.rarity)}</div>
-      </div>
-    `;
-  }).join('');
+function giftClassFromRarity(rarity) {
+  if (rarity === 'rare') return 'rare';
+  if (rarity === 'epic') return 'epic';
+  if (rarity === 'legendary') return 'legendary';
+  return 'common';
 }
 
 function updateUI() {
@@ -196,10 +168,7 @@ async function fetchProfile() {
     const res = await fetch(`${API_BASE}/api/profile/${appState.userId}`);
     const data = await res.json();
 
-    if (!res.ok) {
-      console.error('profile_error', data);
-      return;
-    }
+    if (!res.ok) return;
 
     appState.balance = Number(data.balance || 0);
     appState.wallet = data.wallet_address || '';
@@ -209,6 +178,48 @@ async function fetchProfile() {
   }
 }
 
+async function fetchCases() {
+  try {
+    const res = await fetch(`${API_BASE}/api/cases`);
+    const data = await res.json();
+
+    if (!res.ok) return;
+
+    appState.cases = data.cases || [];
+    renderCases(appState.cases);
+  } catch (e) {
+    console.error('fetchCases error:', e);
+  }
+}
+
+function renderCases(cases) {
+  if (!casesGrid) return;
+
+  if (!cases.length) {
+    casesGrid.innerHTML = `<div class="inventory-empty">Пока кейсы не созданы</div>`;
+    return;
+  }
+
+  casesGrid.innerHTML = cases.map(item => {
+    const previewText = (item.preview || [])
+      .slice(0, 4)
+      .map(p => `${rarityEmoji(p.rarity)} ${p.item_name}`)
+      .join(' • ');
+
+    return `
+      <div class="case-card">
+        <div class="case-glow"></div>
+        <div class="case-name">${item.image || '🎁'} ${item.title}</div>
+        <div class="case-subtitle">${item.subtitle || ''}</div>
+        <div class="case-price">Цена: ${Number(item.price_ton).toFixed(2)} TON</div>
+        <div class="case-rtp">RTP: ~${Math.round(Number(item.rtp_target || 0.7) * 100)}%</div>
+        <div class="case-preview">${previewText || 'Награды появятся здесь'}</div>
+        <button class="case-open-btn" data-case-key="${item.case_key}">Открыть</button>
+      </div>
+    `;
+  }).join('');
+}
+
 async function fetchInventory() {
   if (!appState.userId) return;
 
@@ -216,15 +227,61 @@ async function fetchInventory() {
     const res = await fetch(`${API_BASE}/api/inventory/${appState.userId}`);
     const data = await res.json();
 
-    if (!res.ok) {
-      console.error('inventory_error', data);
-      return;
-    }
-
+    if (!res.ok) return;
     renderInventory(data.items || []);
   } catch (e) {
     console.error('fetchInventory error:', e);
   }
+}
+
+function renderInventory(items) {
+  if (!inventoryList) return;
+
+  if (!items || !items.length) {
+    inventoryList.innerHTML = `<div class="inventory-empty">Пока пусто</div>`;
+    return;
+  }
+
+  inventoryList.innerHTML = items.map(item => {
+    const date = item.created_at ? new Date(item.created_at).toLocaleString('ru-RU') : '';
+    const sellDisabled = Number(item.can_sell) !== 1 || item.status !== 'owned';
+    const withdrawDisabled = Number(item.can_withdraw) !== 1 || item.status !== 'owned';
+
+    return `
+      <div class="inventory-item">
+        <div class="inventory-top">
+          <div class="inventory-left">
+            <div class="inventory-icon ${giftClassFromRarity(item.rarity)}">${item.image || rarityEmoji(item.rarity)}</div>
+            <div class="inventory-main">
+              <div class="inventory-name">${item.item_name}</div>
+              <div class="inventory-meta">${Number(item.ton_value).toFixed(3)} TON • ${date}</div>
+            </div>
+          </div>
+          <div class="inventory-rarity ${rarityClass(item.rarity)}">${rarityLabel(item.rarity)}</div>
+        </div>
+
+        <div class="inventory-actions">
+          <button
+            class="inventory-action-btn ${sellDisabled ? 'inventory-action-disabled' : 'inventory-action-sell'}"
+            data-action="sell"
+            data-id="${item.id}"
+            ${sellDisabled ? 'disabled' : ''}
+          >
+            Продать
+          </button>
+
+          <button
+            class="inventory-action-btn ${withdrawDisabled ? 'inventory-action-disabled' : 'inventory-action-withdraw'}"
+            data-action="withdraw"
+            data-id="${item.id}"
+            ${withdrawDisabled ? 'disabled' : ''}
+          >
+            Вывести
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function showPage(page) {
@@ -258,7 +315,7 @@ function showPage(page) {
 
   if (page === 'roulette') {
     if (roulettePage) roulettePage.classList.add('active');
-    setText(pageSubtitle, currentCase.name);
+    setText(pageSubtitle, currentCase?.title || 'Кейс');
   }
 }
 
@@ -295,9 +352,7 @@ async function pollDeposit(orderId) {
         }
       }
     } catch (e) {
-      if (attempts >= maxAttempts) {
-        clearInterval(timer);
-      }
+      if (attempts >= maxAttempts) clearInterval(timer);
     }
   }, 5000);
 }
@@ -348,13 +403,7 @@ async function payTon() {
         `Заказ создан.\n` +
         `Заказ: ${order.orderId}\n` +
         `Ты ввёл: ${Number(order.requestedAmount).toFixed(2)} TON\n` +
-        `К оплате точно: ${Number(order.exactAmount).toFixed(6)} TON\n` +
-        `Сейчас откроется кошелёк.\n` +
-        `Подтверди перевод именно на эту сумму.`;
-    }
-
-    if (payTonBtn) {
-      payTonBtn.textContent = 'Открываем кошелёк...';
+        `К оплате точно: ${Number(order.exactAmount).toFixed(6)} TON`;
     }
 
     const tx = {
@@ -382,9 +431,7 @@ async function payTon() {
   } catch (e) {
     console.error('payTon error:', e);
     if (depositInfo) {
-      depositInfo.textContent =
-        'Платёж был отменён или кошелёк вернул ошибку.\n' +
-        'Если кошелёк открылся, проверь сумму и попробуй ещё раз.';
+      depositInfo.textContent = 'Платёж был отменён или кошелёк вернул ошибку.';
     }
   } finally {
     if (payTonBtn) {
@@ -396,36 +443,14 @@ async function payTon() {
 
 function createItem(gift) {
   const div = document.createElement('div');
-  div.className = 'item ' + gift.class;
-  div.innerText = gift.name;
+  div.className = `item ${giftClassFromRarity(gift.rarity)}`;
+  div.innerText = gift.item_name;
   return div;
 }
 
 function randomGift() {
-  const pool = giftsByCase[currentCase.key] || giftsByCase.angel;
+  const pool = currentCase?.preview?.length ? currentCase.preview : fallbackPreview;
   return pool[Math.floor(Math.random() * pool.length)];
-}
-
-function giftClassFromRarity(rarity) {
-  if (rarity === 'rare') return 'rare';
-  if (rarity === 'epic') return 'epic';
-  if (rarity === 'legendary') return 'legendary';
-  return 'common';
-}
-
-function fillItems(count = 140) {
-  if (!itemsContainer) return;
-  itemsContainer.innerHTML = '';
-  for (let i = 0; i < count; i++) {
-    itemsContainer.appendChild(createItem(randomGift()));
-  }
-}
-
-function appendMoreItems(count = 100) {
-  if (!itemsContainer) return;
-  for (let i = 0; i < count; i++) {
-    itemsContainer.appendChild(createItem(randomGift()));
-  }
 }
 
 function buildWinningLine(prizeName, rarity) {
@@ -437,15 +462,9 @@ function buildWinningLine(prizeName, rarity) {
   let targetElement = null;
 
   for (let i = 0; i < totalItems; i++) {
-    let gift;
-    if (i === targetIndex) {
-      gift = {
-        name: prizeName,
-        class: giftClassFromRarity(rarity)
-      };
-    } else {
-      gift = randomGift();
-    }
+    const gift = i === targetIndex
+      ? { item_name: prizeName, rarity }
+      : randomGift();
 
     const item = createItem(gift);
 
@@ -468,12 +487,14 @@ function setOffset(value) {
 }
 
 function idleAnimation() {
-  if (!idleRunning) return;
+  if (!idleRunning || !itemsContainer) return;
 
   setOffset(currentOffset + 0.45);
 
-  if (itemsContainer && itemsContainer.children.length < 180) {
-    appendMoreItems(100);
+  if (itemsContainer.children.length < 180) {
+    for (let i = 0; i < 100; i++) {
+      itemsContainer.appendChild(createItem(randomGift()));
+    }
   }
 
   idleFrame = requestAnimationFrame(idleAnimation);
@@ -482,13 +503,11 @@ function idleAnimation() {
 function getSpinDuration() {
   if (spinSound && !isNaN(spinSound.duration) && spinSound.duration > 0) {
     return {
-      soundDuration: spinSound.duration,
       totalDuration: spinSound.duration + 1
     };
   }
 
   return {
-    soundDuration: 5,
     totalDuration: 6
   };
 }
@@ -497,8 +516,17 @@ function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
 }
 
-function showWinPopup(prize) {
+function showWinPopup(prize, itemType, tonValue) {
   setText(popupItem, prize);
+
+  if (popupSubtext) {
+    if (itemType === 'ton_balance') {
+      popupSubtext.textContent = `На баланс начислено ${Number(tonValue).toFixed(3)} TON`;
+    } else {
+      popupSubtext.textContent = `Предмет добавлен в инвентарь • ${Number(tonValue).toFixed(3)} TON`;
+    }
+  }
+
   if (winPopup) winPopup.style.display = 'flex';
 }
 
@@ -509,7 +537,8 @@ function finishSpin() {
   }
 
   if (currentWonPrize) {
-    showWinPopup(currentWonPrize);
+    showWinPopup(currentWonPrize, currentWonType, currentWonValue);
+    fetchProfile();
     fetchInventory();
   }
 
@@ -518,7 +547,7 @@ function finishSpin() {
   idleAnimation();
 }
 
-function startSpinAnimation(prizeName, rarity) {
+function startSpinAnimation(prizeName, rarity, itemType, tonValue) {
   if (spinning) return;
 
   spinning = true;
@@ -535,10 +564,10 @@ function startSpinAnimation(prizeName, rarity) {
   }
 
   currentWonPrize = prizeName;
-  currentWonRarity = rarity;
+  currentWonType = itemType;
+  currentWonValue = tonValue;
 
   const targetElement = buildWinningLine(prizeName, rarity);
-
   if (!targetElement || !itemsContainer) {
     spinning = false;
     return;
@@ -587,7 +616,7 @@ function startSpinAnimation(prizeName, rarity) {
   });
 }
 
-async function openCaseRequest(caseKey, price) {
+async function openCaseRequest(caseKey) {
   if (!appState.userId) {
     alert('Не удалось получить Telegram ID');
     return null;
@@ -600,8 +629,7 @@ async function openCaseRequest(caseKey, price) {
       body: JSON.stringify({
         telegramId: appState.userId,
         username: appState.userName,
-        caseKey,
-        price
+        caseKey
       })
     });
 
@@ -622,28 +650,68 @@ async function openCaseRequest(caseKey, price) {
   }
 }
 
-function openCaseScreen(caseKey, caseName, casePrice) {
-  currentCase = {
-    key: caseKey,
-    name: caseName,
-    price: Number(casePrice)
-  };
-
-  setText(rouletteCaseName, `${caseName} • ${casePrice} TON`);
+function openCaseScreen(caseKey) {
+  currentCase = appState.cases.find(c => c.case_key === caseKey) || null;
+  setText(
+    rouletteCaseName,
+    `${currentCase?.title || 'Case'} • ${Number(currentCase?.price_ton || 0).toFixed(2)} TON`
+  );
   currentOffset = 0;
-  fillItems();
+  if (itemsContainer) itemsContainer.innerHTML = '';
   showPage('roulette');
+  idleAnimation();
+}
+
+async function sellInventoryItem(inventoryId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/inventory/sell`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        telegramId: appState.userId,
+        inventoryId
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || 'Не удалось продать предмет');
+      return;
+    }
+
+    appState.balance = Number(data.newBalance || 0);
+    updateUI();
+    fetchInventory();
+  } catch (e) {
+    console.error('sellInventoryItem error:', e);
+  }
+}
+
+async function withdrawInventoryItem(inventoryId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/inventory/withdraw`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        telegramId: appState.userId,
+        inventoryId
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || 'Не удалось создать заявку на вывод');
+      return;
+    }
+
+    alert('Заявка на вывод создана');
+    fetchInventory();
+  } catch (e) {
+    console.error('withdrawInventoryItem error:', e);
+  }
 }
 
 function bindEvents() {
-  document.querySelectorAll('.case-open-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const card = btn.closest('.case-card');
-      const caseName = card?.querySelector('.case-name')?.textContent || 'Case';
-      openCaseScreen(btn.dataset.case, caseName, btn.dataset.price);
-    });
-  });
-
   if (navCases) navCases.addEventListener('click', () => showPage('cases'));
   if (navInventory) navInventory.addEventListener('click', () => showPage('inventory'));
   if (navProfile) navProfile.addEventListener('click', () => showPage('profile'));
@@ -654,11 +722,38 @@ function bindEvents() {
     balanceBox.addEventListener('click', expandBalanceTemporarily);
   }
 
+  if (casesGrid) {
+    casesGrid.addEventListener('click', e => {
+      const btn = e.target.closest('.case-open-btn');
+      if (!btn) return;
+      openCaseScreen(btn.dataset.caseKey);
+    });
+  }
+
+  if (inventoryList) {
+    inventoryList.addEventListener('click', e => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+
+      const action = btn.dataset.action;
+      const inventoryId = Number(btn.dataset.id);
+
+      if (action === 'sell') {
+        sellInventoryItem(inventoryId);
+      }
+
+      if (action === 'withdraw') {
+        withdrawInventoryItem(inventoryId);
+      }
+    });
+  }
+
   if (openCaseBtn) {
     openCaseBtn.addEventListener('click', async () => {
-      const result = await openCaseRequest(currentCase.key, currentCase.price);
+      if (!currentCase) return;
+      const result = await openCaseRequest(currentCase.case_key);
       if (result) {
-        startSpinAnimation(result.prize, result.rarity);
+        startSpinAnimation(result.prize, result.rarity, result.itemType, result.tonValue);
       }
     });
   }
@@ -700,32 +795,12 @@ function bindEvents() {
 
 function initApp() {
   initTelegramUser();
-  fetchProfile();
-  fetchInventory();
   updateUI();
-  fillItems();
+  fetchProfile();
+  fetchCases();
+  fetchInventory();
   showPage('cases');
   bindEvents();
-
-  if (spinSound && spinSound.readyState >= 1) {
-    idleAnimation();
-  } else if (spinSound) {
-    spinSound.addEventListener(
-      'loadedmetadata',
-      () => {
-        if (!idleFrame && !spinning) {
-          idleAnimation();
-        }
-      },
-      { once: true }
-    );
-
-    setTimeout(() => {
-      if (!idleFrame && !spinning) {
-        idleAnimation();
-      }
-    }, 500);
-  }
 }
 
 initApp();
