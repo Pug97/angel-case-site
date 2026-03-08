@@ -1,48 +1,48 @@
-const tg = window.Telegram?.WebApp
-if (tg) tg.expand()
+const tg = window.Telegram?.WebApp;
+if (tg) tg.expand();
 
-const RECEIVER_WALLET = 'UQBwcw41wYAnPcQuHFtB9a_khXQLQR3LUCq5hMsyyQGuj37k'
-const API_BASE = 'https://angelcase-backend-production-f2fc.up.railway.app'
-const MANIFEST_URL = 'https://Pug97.github.io/angel-case-site/tonconnect-manifest.json'
+const RECEIVER_WALLET = 'UQBwcw41wYAnPcQuHFtB9a_khXQLQR3LUCq5hMsyyQGuj37k';
+const API_BASE = 'https://angelcase-backend-production-f2fc.up.railway.app';
+const MANIFEST_URL = 'https://Pug97.github.io/angel-case-site/tonconnect-manifest.json';
 
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
   manifestUrl: MANIFEST_URL,
   buttonRootId: 'tonConnectButton'
-})
+});
 
-const casesPage = document.getElementById('casesPage')
-const profilePage = document.getElementById('profilePage')
-const roulettePage = document.getElementById('roulettePage')
+const casesPage = document.getElementById('casesPage');
+const profilePage = document.getElementById('profilePage');
+const roulettePage = document.getElementById('roulettePage');
 
-const navCases = document.getElementById('navCases')
-const navProfile = document.getElementById('navProfile')
-const pageSubtitle = document.getElementById('pageSubtitle')
+const navCases = document.getElementById('navCases');
+const navProfile = document.getElementById('navProfile');
+const pageSubtitle = document.getElementById('pageSubtitle');
 
-const balanceValue = document.getElementById('balanceValue')
-const telegramName = document.getElementById('telegramName')
-const telegramId = document.getElementById('telegramId')
-const walletValue = document.getElementById('walletValue')
+const balanceValue = document.getElementById('balanceValue');
+const telegramName = document.getElementById('telegramName');
+const telegramId = document.getElementById('telegramId');
+const walletValue = document.getElementById('walletValue');
 
-const topupAmount = document.getElementById('topupAmount')
-const payTonBtn = document.getElementById('payTonBtn')
-const depositInfo = document.getElementById('depositInfo')
+const topupAmount = document.getElementById('topupAmount');
+const payTonBtn = document.getElementById('payTonBtn');
+const depositInfo = document.getElementById('depositInfo');
 
-const itemsContainer = document.getElementById('items')
-const spinSound = document.getElementById('spinSound')
-const openCaseBtn = document.getElementById('openCase')
-const rouletteCaseName = document.getElementById('rouletteCaseName')
-const backToCasesBtn = document.getElementById('backToCasesBtn')
+const itemsContainer = document.getElementById('items');
+const spinSound = document.getElementById('spinSound');
+const openCaseBtn = document.getElementById('openCase');
+const rouletteCaseName = document.getElementById('rouletteCaseName');
+const backToCasesBtn = document.getElementById('backToCasesBtn');
 
-const winPopup = document.getElementById('winPopup')
-const popupItem = document.getElementById('popupItem')
-const claimBtn = document.getElementById('claimBtn')
+const winPopup = document.getElementById('winPopup');
+const popupItem = document.getElementById('popupItem');
+const claimBtn = document.getElementById('claimBtn');
 
-let idleRunning = true
-let spinning = false
-let currentOffset = 0
-let idleFrame = null
-let spinFrame = null
-let currentCase = { key: 'angel', name: 'Angel Case', price: 1 }
+let idleRunning = true;
+let spinning = false;
+let currentOffset = 0;
+let idleFrame = null;
+let spinFrame = null;
+let currentCase = { key: 'angel', name: 'Angel Case', price: 1 };
 
 const giftsByCase = {
   angel: [
@@ -66,141 +66,150 @@ const giftsByCase = {
     { name: 'Light Relic', class: 'epic' },
     { name: 'Celestial Crown', class: 'legendary' }
   ]
-}
+};
 
 const appState = {
   balance: 0,
   wallet: '',
   userId: '',
   userName: 'Гость'
+};
+
+function setText(el, value) {
+  if (el) el.textContent = value;
 }
 
 function updateUI() {
-  balanceValue.textContent = `${Number(appState.balance || 0).toFixed(6)} TON`
-  telegramName.textContent = appState.userName
-  telegramId.textContent = appState.userId || '—'
-  walletValue.textContent = appState.wallet || 'Не подключён'
+  setText(balanceValue, `${Number(appState.balance || 0).toFixed(6)} TON`);
+  setText(telegramName, appState.userName);
+  setText(telegramId, appState.userId || '—');
+  setText(walletValue, appState.wallet || 'Не подключён');
 }
 
 function initTelegramUser() {
-  const user = tg?.initDataUnsafe?.user
+  const user = tg?.initDataUnsafe?.user;
   if (!user) {
-    updateUI()
-    return
+    updateUI();
+    return;
   }
 
-  appState.userId = String(user.id || '')
+  appState.userId = String(user.id || '');
   appState.userName = user.username
     ? `@${user.username}`
-    : [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Пользователь'
+    : [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Пользователь';
 
-  updateUI()
+  updateUI();
 }
 
 async function fetchProfile() {
-  if (!appState.userId) return
+  if (!appState.userId) return;
 
   try {
-    const res = await fetch(`${API_BASE}/api/profile/${appState.userId}`)
-    const data = await res.json()
+    const res = await fetch(`${API_BASE}/api/profile/${appState.userId}`);
+    const data = await res.json();
 
     if (!res.ok) {
-      console.error('profile_error', data)
-      return
+      console.error('profile_error', data);
+      return;
     }
 
-    appState.balance = Number(data.balance || 0)
-    appState.wallet = data.wallet_address || ''
-    updateUI()
+    appState.balance = Number(data.balance || 0);
+    appState.wallet = data.wallet_address || '';
+    updateUI();
   } catch (e) {
-    console.error('fetchProfile error:', e)
+    console.error('fetchProfile error:', e);
   }
 }
 
 function showPage(page) {
-  casesPage.classList.remove('active')
-  profilePage.classList.remove('active')
-  roulettePage.classList.remove('active')
+  if (casesPage) casesPage.classList.remove('active');
+  if (profilePage) profilePage.classList.remove('active');
+  if (roulettePage) roulettePage.classList.remove('active');
 
-  navCases.classList.remove('active')
-  navProfile.classList.remove('active')
+  if (navCases) navCases.classList.remove('active');
+  if (navProfile) navProfile.classList.remove('active');
 
   if (page === 'cases') {
-    casesPage.classList.add('active')
-    navCases.classList.add('active')
-    pageSubtitle.textContent = 'Кейсы'
+    if (casesPage) casesPage.classList.add('active');
+    if (navCases) navCases.classList.add('active');
+    setText(pageSubtitle, 'Кейсы');
   }
 
   if (page === 'profile') {
-    profilePage.classList.add('active')
-    navProfile.classList.add('active')
-    pageSubtitle.textContent = 'Профиль'
+    if (profilePage) profilePage.classList.add('active');
+    if (navProfile) navProfile.classList.add('active');
+    setText(pageSubtitle, 'Профиль');
   }
 
   if (page === 'roulette') {
-    roulettePage.classList.add('active')
-    pageSubtitle.textContent = currentCase.name
+    if (roulettePage) roulettePage.classList.add('active');
+    setText(pageSubtitle, currentCase.name);
   }
 }
 
 async function pollDeposit(orderId) {
-  let attempts = 0
-  const maxAttempts = 36
+  let attempts = 0;
+  const maxAttempts = 36;
 
   const timer = setInterval(async () => {
-    attempts++
+    attempts++;
 
     try {
-      const res = await fetch(`${API_BASE}/api/deposits/${orderId}`)
-      const data = await res.json()
+      const res = await fetch(`${API_BASE}/api/deposits/${orderId}`);
+      const data = await res.json();
 
       if (res.ok && data.status === 'confirmed') {
-        clearInterval(timer)
-        depositInfo.textContent =
-          `Пополнение подтверждено.\n` +
-          `Заказ: ${orderId}\n` +
-          `Начислено: ${Number(data.amount).toFixed(6)} TON`
-        await fetchProfile()
-        return
+        clearInterval(timer);
+        if (depositInfo) {
+          depositInfo.textContent =
+            `Пополнение подтверждено.\n` +
+            `Заказ: ${orderId}\n` +
+            `Начислено: ${Number(data.amount).toFixed(6)} TON`;
+        }
+        await fetchProfile();
+        return;
       }
 
       if (attempts >= maxAttempts) {
-        clearInterval(timer) {
-        clearInterval(timer)
-        depositInfo.textContent =
-          `Платёж отправлен, но подтверждение ещё не найдено.\n` +
-          `Заказ: ${orderId}\n` +
-          `Проверь баланс позже.`
+        clearInterval(timer);
+        if (depositInfo) {
+          depositInfo.textContent =
+            `Платёж отправлен, но подтверждение ещё не найдено.\n` +
+            `Заказ: ${orderId}\n` +
+            `Проверь баланс позже.`;
+        }
       }
     } catch (e) {
       if (attempts >= maxAttempts) {
-        clearInterval(timer)
+        clearInterval(timer);
       }
     }
-  }, 5000)
+  }, 5000);
 }
 
 async function payTon() {
-  const amount = Number(topupAmount.value)
+  const amount = Number(topupAmount?.value);
 
   if (!tonConnectUI.account?.address) {
-    alert('Сначала подключи TON-кошелёк')
-    return
+    alert('Сначала подключи TON-кошелёк');
+    return;
   }
 
   if (!amount || amount <= 0) {
-    alert('Введите сумму')
-    return
+    alert('Введите сумму');
+    return;
   }
 
   if (!appState.userId) {
-    alert('Не удалось получить Telegram ID')
-    return
+    alert('Не удалось получить Telegram ID');
+    return;
   }
 
   try {
-    payTonBtn.disabled = true
-    payTonBtn.textContent = 'Создание заказа...'
+    if (payTonBtn) {
+      payTonBtn.disabled = true;
+      payTonBtn.textContent = 'Создание заказа...';
+    }
 
     const createRes = await fetch(`${API_BASE}/api/deposits/create`, {
       method: 'POST',
@@ -210,24 +219,28 @@ async function payTon() {
         username: appState.userName,
         amount
       })
-    })
+    });
 
-    const order = await createRes.json()
+    const order = await createRes.json();
 
     if (!createRes.ok) {
-      alert(order.error || 'Не удалось создать пополнение')
-      return
+      alert(order.error || 'Не удалось создать пополнение');
+      return;
     }
 
-    depositInfo.textContent =
-      `Заказ создан.\n` +
-      `Заказ: ${order.orderId}\n` +
-      `Ты ввёл: ${Number(order.requestedAmount).toFixed(2)} TON\n` +
-      `К оплате точно: ${Number(order.exactAmount).toFixed(6)} TON\n` +
-      `Сейчас откроется кошелёк.\n` +
-      `Подтверди перевод именно на эту сумму.`
+    if (depositInfo) {
+      depositInfo.textContent =
+        `Заказ создан.\n` +
+        `Заказ: ${order.orderId}\n` +
+        `Ты ввёл: ${Number(order.requestedAmount).toFixed(2)} TON\n` +
+        `К оплате точно: ${Number(order.exactAmount).toFixed(6)} TON\n` +
+        `Сейчас откроется кошелёк.\n` +
+        `Подтверди перевод именно на эту сумму.`;
+    }
 
-    payTonBtn.textContent = 'Открываем кошелёк...'
+    if (payTonBtn) {
+      payTonBtn.textContent = 'Открываем кошелёк...';
+    }
 
     const tx = {
       validUntil: Math.floor(Date.now() / 1000) + 300,
@@ -237,191 +250,207 @@ async function payTon() {
           amount: order.exactNano
         }
       ]
+    };
+
+    await tonConnectUI.sendTransaction(tx);
+
+    if (depositInfo) {
+      depositInfo.textContent =
+        `Платёж отправлен.\n` +
+        `Заказ: ${order.orderId}\n` +
+        `Точная сумма: ${Number(order.exactAmount).toFixed(6)} TON\n` +
+        `Ожидаем подтверждение сети...`;
     }
 
-    await tonConnectUI.sendTransaction(tx)
-
-    depositInfo.textContent =
-      `Платёж отправлен.\n` +
-      `Заказ: ${order.orderId}\n` +
-      `Точная сумма: ${Number(order.exactAmount).toFixed(6)} TON\n` +
-      `Ожидаем подтверждение сети...`
-
-    topupAmount.value = ''
-    pollDeposit(order.orderId)
+    if (topupAmount) topupAmount.value = '';
+    pollDeposit(order.orderId);
   } catch (e) {
-    console.error('payTon error:', e)
-    depositInfo.textContent =
-      'Платёж был отменён или кошелёк вернул ошибку.\n' +
-      'Если кошелёк открылся, проверь сумму и попробуй ещё раз.'
+    console.error('payTon error:', e);
+    if (depositInfo) {
+      depositInfo.textContent =
+        'Платёж был отменён или кошелёк вернул ошибку.\n' +
+        'Если кошелёк открылся, проверь сумму и попробуй ещё раз.';
+    }
   } finally {
-    payTonBtn.disabled = false
-    payTonBtn.textContent = 'Отправить TON'
+    if (payTonBtn) {
+      payTonBtn.disabled = false;
+      payTonBtn.textContent = 'Отправить TON';
+    }
   }
 }
 
 function createItem(gift) {
-  const div = document.createElement('div')
-  div.className = 'item ' + gift.class
-  div.innerText = gift.name
-  return div
+  const div = document.createElement('div');
+  div.className = 'item ' + gift.class;
+  div.innerText = gift.name;
+  return div;
 }
 
 function randomGift() {
-  const pool = giftsByCase[currentCase.key] || giftsByCase.angel
-  return pool[Math.floor(Math.random() * pool.length)]
+  const pool = giftsByCase[currentCase.key] || giftsByCase.angel;
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 function fillItems(count = 140) {
-  itemsContainer.innerHTML = ''
+  if (!itemsContainer) return;
+  itemsContainer.innerHTML = '';
   for (let i = 0; i < count; i++) {
-    itemsContainer.appendChild(createItem(randomGift()))
+    itemsContainer.appendChild(createItem(randomGift()));
   }
 }
 
 function appendMoreItems(count = 100) {
+  if (!itemsContainer) return;
   for (let i = 0; i < count; i++) {
-    itemsContainer.appendChild(createItem(randomGift()))
+    itemsContainer.appendChild(createItem(randomGift()));
   }
 }
 
 function setOffset(value) {
-  currentOffset = value
-  itemsContainer.style.transform = `translate3d(-${currentOffset}px, 0, 0)`
+  currentOffset = value;
+  if (itemsContainer) {
+    itemsContainer.style.transform = `translate3d(-${currentOffset}px, 0, 0)`;
+  }
 }
 
 function idleAnimation() {
-  if (!idleRunning) return
+  if (!idleRunning) return;
 
-  setOffset(currentOffset + 0.45)
+  setOffset(currentOffset + 0.45);
 
-  if (itemsContainer.children.length < 180) {
-    appendMoreItems(100)
+  if (itemsContainer && itemsContainer.children.length < 180) {
+    appendMoreItems(100);
   }
 
-  idleFrame = requestAnimationFrame(idleAnimation)
+  idleFrame = requestAnimationFrame(idleAnimation);
 }
 
 function getSpinDuration() {
-  if (!isNaN(spinSound.duration) && spinSound.duration > 0) {
+  if (spinSound && !isNaN(spinSound.duration) && spinSound.duration > 0) {
     return {
       soundDuration: spinSound.duration,
       totalDuration: spinSound.duration + 1
-    }
+    };
   }
 
   return {
     soundDuration: 5,
     totalDuration: 6
-  }
+  };
 }
 
 function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3)
+  return 1 - Math.pow(1 - t, 3);
 }
 
 function findWinningItem() {
-  const marker = document.querySelector('.marker')
-  const markerRect = marker.getBoundingClientRect()
-  const markerX = markerRect.left + markerRect.width / 2
+  const marker = document.querySelector('.marker');
+  if (!marker) return null;
 
-  const items = document.querySelectorAll('.item')
-  let winItem = null
+  const markerRect = marker.getBoundingClientRect();
+  const markerX = markerRect.left + markerRect.width / 2;
+
+  const items = document.querySelectorAll('.item');
+  let winItem = null;
 
   items.forEach(item => {
-    const rect = item.getBoundingClientRect()
+    const rect = item.getBoundingClientRect();
     if (rect.left <= markerX && rect.right >= markerX) {
-      winItem = item
+      winItem = item;
     }
-  })
+  });
 
-  return winItem
+  return winItem;
 }
 
 function showWinPopup(prize) {
-  popupItem.textContent = prize
-  winPopup.style.display = 'flex'
+  setText(popupItem, prize);
+  if (winPopup) winPopup.style.display = 'flex';
 }
 
 function finishSpin() {
-  spinSound.pause()
-  spinSound.currentTime = 0
-
-  const winItem = findWinningItem()
-  if (winItem) {
-    showWinPopup(winItem.innerText)
+  if (spinSound) {
+    spinSound.pause();
+    spinSound.currentTime = 0;
   }
 
-  spinning = false
-  idleRunning = true
-  idleAnimation()
+  const winItem = findWinningItem();
+  if (winItem) {
+    showWinPopup(winItem.innerText);
+  }
+
+  spinning = false;
+  idleRunning = true;
+  idleAnimation();
 }
 
 function startSpinAnimation() {
-  if (spinning) return
+  if (spinning) return;
 
-  spinning = true
-  idleRunning = false
+  spinning = true;
+  idleRunning = false;
 
   if (idleFrame) {
-    cancelAnimationFrame(idleFrame)
-    idleFrame = null
+    cancelAnimationFrame(idleFrame);
+    idleFrame = null;
   }
 
   if (spinFrame) {
-    cancelAnimationFrame(spinFrame)
-    spinFrame = null
+    cancelAnimationFrame(spinFrame);
+    spinFrame = null;
   }
 
-  if (itemsContainer.children.length < 300) {
-    appendMoreItems(220)
+  if (itemsContainer && itemsContainer.children.length < 300) {
+    appendMoreItems(220);
   }
 
-  spinSound.pause()
-  spinSound.currentTime = 0
-  spinSound.play().catch(() => {})
+  if (spinSound) {
+    spinSound.pause();
+    spinSound.currentTime = 0;
+    spinSound.play().catch(() => {});
+  }
 
-  const timing = getSpinDuration()
-  const soundDuration = timing.soundDuration
-  const totalDuration = timing.totalDuration
+  const timing = getSpinDuration();
+  const soundDuration = timing.soundDuration;
+  const totalDuration = timing.totalDuration;
 
-  const startOffset = currentOffset
-  const pixelsPerSecond = 950
-  const extraTravel = 1100 + Math.random() * 350
-  const totalTravel = (pixelsPerSecond * soundDuration) + extraTravel
+  const startOffset = currentOffset;
+  const pixelsPerSecond = 950;
+  const extraTravel = 1100 + Math.random() * 350;
+  const totalTravel = (pixelsPerSecond * soundDuration) + extraTravel;
 
-  const startTime = performance.now()
+  const startTime = performance.now();
 
   function animateSpin(now) {
-    const elapsed = (now - startTime) / 1000
-    const progress = Math.min(elapsed / totalDuration, 1)
-    const eased = easeOutCubic(progress)
+    const elapsed = (now - startTime) / 1000;
+    const progress = Math.min(elapsed / totalDuration, 1);
+    const eased = easeOutCubic(progress);
 
-    const newOffset = startOffset + totalTravel * eased
-    setOffset(newOffset)
+    const newOffset = startOffset + totalTravel * eased;
+    setOffset(newOffset);
 
-    if (itemsContainer.children.length < 220) {
-      appendMoreItems(120)
+    if (itemsContainer && itemsContainer.children.length < 220) {
+      appendMoreItems(120);
     }
 
-    if (elapsed >= soundDuration && !spinSound.paused) {
-      spinSound.pause()
+    if (spinSound && elapsed >= soundDuration && !spinSound.paused) {
+      spinSound.pause();
     }
 
     if (progress < 1) {
-      spinFrame = requestAnimationFrame(animateSpin)
+      spinFrame = requestAnimationFrame(animateSpin);
     } else {
-      finishSpin()
+      finishSpin();
     }
   }
 
-  spinFrame = requestAnimationFrame(animateSpin)
+  spinFrame = requestAnimationFrame(animateSpin);
 }
 
 async function openCaseRequest(caseKey, price) {
   if (!appState.userId) {
-    alert('Не удалось получить Telegram ID')
-    return false
+    alert('Не удалось получить Telegram ID');
+    return false;
   }
 
   try {
@@ -434,22 +463,22 @@ async function openCaseRequest(caseKey, price) {
         caseKey,
         price
       })
-    })
+    });
 
-    const data = await res.json()
+    const data = await res.json();
 
     if (!res.ok) {
-      alert(data.error || 'Ошибка открытия кейса')
-      return false
+      alert(data.error || 'Ошибка открытия кейса');
+      return false;
     }
 
-    appState.balance = Number(data.newBalance || 0)
-    updateUI()
-    return true
+    appState.balance = Number(data.newBalance || 0);
+    updateUI();
+    return true;
   } catch (e) {
-    console.error('openCaseRequest error:', e)
-    alert('Ошибка соединения с backend')
-    return false
+    console.error('openCaseRequest error:', e);
+    alert('Ошибка соединения с backend');
+    return false;
   }
 }
 
@@ -458,88 +487,99 @@ function openCaseScreen(caseKey, caseName, casePrice) {
     key: caseKey,
     name: caseName,
     price: Number(casePrice)
-  }
+  };
 
-  rouletteCaseName.textContent = `${caseName} • ${casePrice} TON`
-  currentOffset = 0
-  fillItems()
-  showPage('roulette')
+  setText(rouletteCaseName, `${caseName} • ${casePrice} TON`);
+  currentOffset = 0;
+  fillItems();
+  showPage('roulette');
 }
 
-document.querySelectorAll('.case-open-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const card = btn.closest('.case-card')
-    const caseName = card.querySelector('.case-name').textContent
-    openCaseScreen(btn.dataset.case, caseName, btn.dataset.price)
-  })
-})
+function bindEvents() {
+  document.querySelectorAll('.case-open-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.case-card');
+      const caseName = card?.querySelector('.case-name')?.textContent || 'Case';
+      openCaseScreen(btn.dataset.case, caseName, btn.dataset.price);
+    });
+  });
 
-navCases.addEventListener('click', () => showPage('cases'))
-navProfile.addEventListener('click', () => showPage('profile'))
-backToCasesBtn.addEventListener('click', () => showPage('cases'))
-payTonBtn.addEventListener('click', payTon)
+  if (navCases) navCases.addEventListener('click', () => showPage('cases'));
+  if (navProfile) navProfile.addEventListener('click', () => showPage('profile'));
+  if (backToCasesBtn) backToCasesBtn.addEventListener('click', () => showPage('cases'));
+  if (payTonBtn) payTonBtn.addEventListener('click', payTon);
 
-openCaseBtn.addEventListener('click', async () => {
-  const ok = await openCaseRequest(currentCase.key, currentCase.price)
-  if (ok) {
-    startSpinAnimation()
-  }
-})
-
-claimBtn.addEventListener('click', () => {
-  winPopup.style.display = 'none'
-})
-
-tonConnectUI.onStatusChange(async wallet => {
-  try {
-    if (wallet?.account?.address) {
-      appState.wallet = wallet.account.address
-      updateUI()
-
-      if (appState.userId) {
-        await fetch(`${API_BASE}/api/profile/bind-wallet`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            telegramId: appState.userId,
-            username: appState.userName,
-            wallet: wallet.account.address
-          })
-        })
-
-        await fetchProfile()
+  if (openCaseBtn) {
+    openCaseBtn.addEventListener('click', async () => {
+      const ok = await openCaseRequest(currentCase.key, currentCase.price);
+      if (ok) {
+        startSpinAnimation();
       }
-    } else {
-      appState.wallet = ''
-      updateUI()
-    }
-  } catch (e) {
-    console.error('bind wallet error:', e)
+    });
   }
-})
 
-initTelegramUser()
-fetchProfile()
-updateUI()
-fillItems()
-showPage('cases')
+  if (claimBtn) {
+    claimBtn.addEventListener('click', () => {
+      if (winPopup) winPopup.style.display = 'none';
+    });
+  }
 
-if (spinSound.readyState >= 1) {
-  idleAnimation()
-} else {
-  spinSound.addEventListener(
-    'loadedmetadata',
-    () => {
+  tonConnectUI.onStatusChange(async wallet => {
+    try {
+      if (wallet?.account?.address) {
+        appState.wallet = wallet.account.address;
+        updateUI();
+
+        if (appState.userId) {
+          await fetch(`${API_BASE}/api/profile/bind-wallet`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              telegramId: appState.userId,
+              username: appState.userName,
+              wallet: wallet.account.address
+            })
+          });
+
+          await fetchProfile();
+        }
+      } else {
+        appState.wallet = '';
+        updateUI();
+      }
+    } catch (e) {
+      console.error('bind wallet error:', e);
+    }
+  });
+}
+
+function initApp() {
+  initTelegramUser();
+  fetchProfile();
+  updateUI();
+  fillItems();
+  showPage('cases');
+  bindEvents();
+
+  if (spinSound && spinSound.readyState >= 1) {
+    idleAnimation();
+  } else if (spinSound) {
+    spinSound.addEventListener(
+      'loadedmetadata',
+      () => {
+        if (!idleFrame && !spinning) {
+          idleAnimation();
+        }
+      },
+      { once: true }
+    );
+
+    setTimeout(() => {
       if (!idleFrame && !spinning) {
-        idleAnimation()
+        idleAnimation();
       }
-    },
-    { once: true }
-  )
-
-  setTimeout(() => {
-    if (!idleFrame && !spinning) {
-      idleAnimation()
-    }
-  }, 500)
+    }, 500);
+  }
 }
+
+initApp();
