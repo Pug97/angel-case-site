@@ -28,40 +28,17 @@
 
     <main class="content">
 
-      <!-- CASES PAGE -->
       <section id="casesPage" class="page active">
         <div class="hero-card">
-          <div class="hero-title">Небесные кейсы</div>
+          <div class="hero-title">Новые кейсы</div>
           <div class="hero-text">
-            Открывай кейсы, выигрывай подарки и храни их в своём инвентаре.
+            Открывай кейсы, выбивай Telegram-подарки и TON, храни всё в инвентаре.
           </div>
         </div>
 
-        <div class="cases-grid">
-          <div class="case-card">
-            <div class="case-glow"></div>
-            <div class="case-name">Angel Case</div>
-            <div class="case-price">Цена: 1 TON</div>
-            <button class="case-open-btn" data-case="angel" data-price="1">Открыть</button>
-          </div>
-
-          <div class="case-card">
-            <div class="case-glow rare-glow"></div>
-            <div class="case-name">Heaven Case</div>
-            <div class="case-price">Цена: 3 TON</div>
-            <button class="case-open-btn" data-case="heaven" data-price="3">Открыть</button>
-          </div>
-
-          <div class="case-card">
-            <div class="case-glow epic-glow"></div>
-            <div class="case-name">Divine Case</div>
-            <div class="case-price">Цена: 5 TON</div>
-            <button class="case-open-btn" data-case="divine" data-price="5">Открыть</button>
-          </div>
-        </div>
+        <div id="casesGrid" class="cases-grid two-cols"></div>
       </section>
 
-      <!-- INVENTORY PAGE -->
       <section id="inventoryPage" class="page">
         <div class="inventory-page-card">
           <div class="profile-title">Инвентарь</div>
@@ -71,7 +48,6 @@
         </div>
       </section>
 
-      <!-- PROFILE PAGE -->
       <section id="profilePage" class="page">
         <div class="profile-card">
           <div class="profile-title">Профиль</div>
@@ -102,24 +78,19 @@
 
           <div class="topup-wallet-box">
             <div class="small-label">Кошелёк получателя</div>
-            <div class="wallet-address">
-              UQBwcw41wYAnPcQuHFtB9a_khXQLQR3LUCq5hMsyyQGuj37k
-            </div>
+            <div class="wallet-address">UQBwcw41wYAnPcQuHFtB9a_khXQLQR3LUCq5hMsyyQGuj37k</div>
           </div>
 
           <button id="payTonBtn" class="primary-btn">Отправить TON</button>
 
-          <div id="depositInfo" class="hint-text">
-            Здесь будет статус пополнения.
-          </div>
+          <div id="depositInfo" class="hint-text">Здесь будет статус пополнения.</div>
         </div>
       </section>
 
-      <!-- ROULETTE PAGE -->
       <section id="roulettePage" class="page">
         <div class="roulette-header">
           <button id="backToCasesBtn" class="back-btn">← Назад</button>
-          <div class="roulette-case-name" id="rouletteCaseName">Angel Case</div>
+          <div class="roulette-case-name" id="rouletteCaseName">Case</div>
         </div>
 
         <div class="roulette">
@@ -140,9 +111,10 @@
 
   <div id="winPopup" class="popup">
     <div class="popup-content">
-      <h2>You won</h2>
+      <h2>Выигрыш</h2>
       <div id="popupItem"></div>
-      <button id="claimBtn" class="primary-btn">Забрать выигрыш</button>
+      <div id="popupSubtext" class="popup-subtext"></div>
+      <button id="claimBtn" class="primary-btn">Забрать</button>
     </div>
   </div>
 
